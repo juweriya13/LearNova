@@ -82,7 +82,7 @@ export default function LeaderboardPage() {
                         <AvatarImage src={`https://picsum.photos/seed/${player.id}/40/40`} alt={player.name || 'User'} data-ai-hint="person portrait" />
                         <AvatarFallback>{player.name?.charAt(0) || 'U'}</AvatarFallback>
                       </Avatar>
-                      <span className="font-medium">{player.name}</span>
+                      <span className="font-medium">{player.name || 'Anonymous Player'}</span>
                     </div>
                   </TableCell>
                   <TableCell className="text-right font-mono">{player.totalScore?.toLocaleString() || 0}</TableCell>

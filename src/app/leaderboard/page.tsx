@@ -11,7 +11,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collectionGroup, query, orderBy, limit, Firestore } from 'firebase/firestore';
+import { collectionGroup, query, orderBy, limit, type Firestore } from 'firebase/firestore';
 import { Trophy } from 'lucide-react';
 
 // Define a type for your leaderboard entry based on your data structure
@@ -33,11 +33,8 @@ export default function LeaderboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   
-  // The query is memoized and will only be created when firestore is available.
   const leaderboardQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    // Note: collectionGroup queries require a corresponding index in firestore.rules
-    // You'll need to create a composite index in the Firebase console for this to work.
     return query(
       collectionGroup(firestore as Firestore, 'leaderboard'), 
       orderBy('totalScore', 'desc'),

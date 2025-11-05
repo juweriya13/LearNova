@@ -12,7 +12,6 @@ import {
   type LucideIcon,
   LogIn,
 } from 'lucide-react';
-import { PlaceHolderImages } from './placeholder-images';
 
 export const navLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -22,23 +21,17 @@ export const navLinks = [
   { href: '/recommendations', label: 'Recommendations', icon: Lightbulb },
 ];
 
-export const user = {
-  name: 'Alex Doe',
-  email: 'alex.doe@example.com',
-  avatar: 'user-avatar',
-};
-
 export const dashboardStats = [
-  { title: 'Daily Streak', value: '5 Days', icon: Flame, color: 'text-amber-500' },
-  { title: 'Points Earned', value: '1,250', icon: Award, color: 'text-violet-500' },
-  { title: 'Quizzes Taken', value: '23', icon: HelpCircle, color: 'text-sky-500' },
-  { title: 'Highest Score', value: '98%', icon: Target, color: 'text-emerald-500' },
+  { title: 'Daily Streak', value: '0 Days', icon: Flame, color: 'text-amber-500' },
+  { title: 'Points Earned', value: '0', icon: Award, color: 'text-violet-500' },
+  { title: 'Quizzes Taken', value: '0', icon: HelpCircle, color: 'text-sky-500' },
+  { title: 'Highest Score', value: '0%', icon: Target, color: 'text-emerald-500' },
 ];
 
 export const subjects = [
-  { name: 'Mathematics', progress: 75, icon: BrainCircuit },
-  { name: 'History', progress: 60, icon: BookOpen },
-  { name: 'Science', progress: 85, icon: BrainCircuit },
+  { name: 'Mathematics', progress: 0, icon: BrainCircuit },
+  { name: 'History', progress: 0, icon: BookOpen },
+  { name: 'Science', progress: 0, icon: BrainCircuit },
 ];
 
 type Badge = {
@@ -57,25 +50,11 @@ export const badges: Badge[] = [
 ];
 
 export type LeaderboardEntry = {
-  rank: number;
+  id: string;
   name: string;
-  score: number;
-  badges: number;
-  avatar: string;
+  totalScore: number;
+  qualificationId: string;
 };
-
-const userAvatar = PlaceHolderImages.find((img) => img.id === user.avatar);
-
-export const leaderboardData: LeaderboardEntry[] = [
-  { rank: 1, name: 'Elena', score: 2500, badges: 5, avatar: 'https://picsum.photos/seed/101/40/40' },
-  { rank: 2, name: 'Marcus', score: 2350, badges: 4, avatar: 'https://picsum.photos/seed/102/40/40' },
-  { rank: 3, name: 'Chloe', score: 2200, badges: 4, avatar: 'https://picsum.photos/seed/103/40/40' },
-  { rank: 4, name: 'Alex Doe', score: 1250, badges: 2, avatar: userAvatar?.imageUrl ?? 'https://picsum.photos/seed/1/40/40' },
-  { rank: 5, name: 'Jasmine', score: 1100, badges: 2, avatar: 'https://picsum.photos/seed/104/40/40' },
-  { rank: 6, name: 'Kenji', score: 950, badges: 1, avatar: 'https://picsum.photos/seed/105/40/40' },
-  { rank: 7, name: 'Fatima', score: 800, badges: 1, avatar: 'https://picsum.photos/seed/106/40/40' },
-  { rank: 8, name: 'Leo', score: 750, badges: 1, avatar: 'https://picsum.photos/seed/107/40/40' },
-];
 
 export const qualificationLevels = [
   '1st Grade', '2nd Grade', '3rd Grade', '4th Grade', '5th Grade', '6th Grade', 

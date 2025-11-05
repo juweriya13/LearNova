@@ -1,4 +1,5 @@
-import Image from 'next/image';
+'use client';
+
 import {
   Table,
   TableBody,
@@ -9,13 +10,10 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { leaderboardData, LeaderboardEntry } from '@/lib/data';
+import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collectionGroup, query, orderBy, limit } from 'firebase/firestore';
 import { Trophy } from 'lucide-react';
-
-export const metadata = {
-  title: 'Leaderboard | LearnVerse AI',
-  description: 'See how you rank against other learners.',
-};
+import type { LeaderboardEntry } from '@/lib/data';
 
 const getRankColor = (rank: number) => {
   if (rank === 1) return 'text-yellow-400';
@@ -25,6 +23,20 @@ const getRankColor = (rank: number) => {
 };
 
 export default function LeaderboardPage() {
+  const { user } = useUser();
+  const firestore = useFirestore();
+  
+  const leaderboardQuery = useMemoFirebase(() => 
+    query(
+      collectionGroup(firestore, 'leaderboard'), 
+      orderBy('totalScore', 'desc'),
+      limit(10)
+    ), 
+    [firestore]
+  );
+  
+  const { data: leaderboardData, isLoading } = useCollection<LeaderboardEntry>(leaderboardQuery);
+
   return (
     <Card className="shadow-lg">
       <CardHeader>
@@ -38,31 +50,42 @@ export default function LeaderboardPage() {
               <TableHead className="w-[80px]">Rank</TableHead>
               <TableHead>Player</TableHead>
               <TableHead className="text-right">Score</TableHead>
-              <TableHead className="text-right">Badges</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {leaderboardData.map((player: LeaderboardEntry) => (
-              <TableRow key={player.rank} className={player.name === "Alex Doe" ? "bg-accent/50" : ""}>
-                <TableCell className="font-bold text-lg">
-                  <div className="flex items-center gap-2">
-                    <Trophy className={`h-5 w-5 ${getRankColor(player.rank)}`} />
-                    {player.rank}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarImage src={player.avatar} alt={player.name} data-ai-hint="person portrait" />
-                      <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium">{player.name}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-right font-mono">{player.score.toLocaleString()}</TableCell>
-                <TableCell className="text-right font-mono">{player.badges}</TableCell>
+            {isLoading && (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center">Loading leaderboard...</TableCell>
               </TableRow>
-            ))}
+            )}
+            {leaderboardData && leaderboardData.map((player, index) => {
+              const rank = index + 1;
+              return (
+                <TableRow key={player.id} className={player.id === user?.uid ? "bg-accent/50" : ""}>
+                  <TableCell className="font-bold text-lg">
+                    <div className="flex items-center gap-2">
+                      <Trophy className={`h-5 w-5 ${getRankColor(rank)}`} />
+                      {rank}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        <AvatarImage src={`https://picsum.photos/seed/${player.id}/40/40`} alt={player.name} data-ai-hint="person portrait" />
+                        <AvatarFallback>{player.name?.charAt(0) || 'U'}</AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium">{player.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right font-mono">{player.totalScore?.toLocaleString()}</TableCell>
+                </TableRow>
+              )
+            })}
+             {!isLoading && (!leaderboardData || leaderboardData.length === 0) && (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center">No players on the leaderboard yet.</TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </CardContent>

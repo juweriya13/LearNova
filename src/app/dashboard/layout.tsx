@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   SidebarProvider,
   Sidebar,
@@ -17,8 +17,10 @@ import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/icons';
 import { navLinks } from '@/lib/data';
 import { Header } from '@/components/Header';
-import { cn } from '@/lib/utils';
 import { LogOut, Settings } from 'lucide-react';
+import { useAuth, useUser } from '@/firebase';
+import { signOut } from 'firebase/auth';
+import { useEffect } from 'react';
 
 export default function DashboardLayout({
   children,
@@ -26,6 +28,28 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
+
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push('/login');
+  };
 
   return (
     <SidebarProvider>
@@ -43,6 +67,7 @@ export default function DashboardLayout({
                 <SidebarMenuButton
                   isActive={pathname === link.href}
                   className="w-full"
+                  tooltip={link.label}
                 >
                   <link.icon className="size-5" />
                   <span className="w-full">{link.label}</span>
@@ -54,18 +79,16 @@ export default function DashboardLayout({
         <SidebarFooter>
           <SidebarMenu>
              <SidebarMenuItem>
-                <SidebarMenuButton>
+                <SidebarMenuButton tooltip="Settings">
                   <Settings className="size-5" />
                   <span className="w-full">Settings</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="/login">
-                <SidebarMenuButton>
+                <SidebarMenuButton onClick={handleLogout} tooltip="Logout">
                   <LogOut className="size-5" />
                   <span className="w-full">Logout</span>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>

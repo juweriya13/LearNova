@@ -2,36 +2,35 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // User-specific data
+    // 👩‍🎓 User-specific data
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Public quiz data (read-only for authenticated, write for authenticated)
-    match /quizzes/{qualificationId}/{difficulty}/{quizId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+    // 🧠 Recommendations (per user)
+    match /users/{userId}/recommendations/{recommendationId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Leaderboard data (read all, write by authenticated)
-    match /leaderboard/{qualificationId}/{leaderboardEntryId} {
+    // 📘 Quizzes (authenticated only)
+    match /quizzes/{qualificationId}/{difficulty}/{quizId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // 🏆 Leaderboard (works with collectionGroup)
+    match /{path=**}/leaderboard/{docId} {
       allow read: if true;
       allow write: if request.auth != null;
     }
 
-    // Recommendations (user-specific)
-    match /users/{userId}/recommendations/{recommendationId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Subjects (read all, write by authenticated)
+    // 📚 Subjects (public read)
     match /subjects/{subjectId} {
       allow read: if true;
       allow write: if request.auth != null;
     }
 
-    // Qualifications (read all, write by authenticated)
-     match /qualifications/{qualificationId} {
+    // 🎓 Qualifications (public read)
+    match /qualifications/{qualificationId} {
       allow read: if true;
       allow write: if request.auth != null;
     }

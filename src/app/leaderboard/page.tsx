@@ -1,52 +1,58 @@
 'use client';
 
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useUser, useCollection, useFirestore } from '@/firebase';
-import { collectionGroup, query, orderBy, limit, type Firestore, type Query } from 'firebase/firestore';
 import { Trophy } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
-// Define a type for your leaderboard entry based on your data structure
+import { collectionGroup, limit, orderBy, query, type Query, type DocumentData } from 'firebase/firestore';
+import { getApp, getApps, initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
+
+import { useCollection } from '@/firebase/firestore/use-collection'; // ✅ direct import of the hook (no barrel)
+
+// If you already have a config file, import from there instead:
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
+};
+
+function getDb() {
+  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  return getFirestore(app);
+}
+
 interface LeaderboardEntry {
   id: string;
   name?: string;
   totalScore?: number;
-  // Add other fields from your leaderboard documents
 }
 
-const getRankColor = (rank: number) => {
-  if (rank === 1) return 'text-yellow-400';
-  if (rank === 2) return 'text-gray-400';
-  if (rank === 3) return 'text-orange-400';
-  return 'text-foreground';
-};
+const getRankColor = (rank: number) =>
+  rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-gray-400' : rank === 3 ? 'text-orange-400' : 'text-foreground';
 
 export default function LeaderboardPage() {
-  const { user } = useUser();
-  const firestore = useFirestore();
-  const [leaderboardQuery, setLeaderboardQuery] = useState<Query<LeaderboardEntry> | null>(null);
+  const [qRef, setQRef] = useState<Query<LeaderboardEntry> | null>(null);
 
   useEffect(() => {
-    if (firestore) {
-      const q = query(
-        collectionGroup(firestore, 'leaderboard'),
-        orderBy('totalScore', 'desc'),
-        limit(10)
-      ) as Query<LeaderboardEntry>;
-      setLeaderboardQuery(q);
-    }
-  }, [firestore]);
-  
-  const { data: leaderboardData, isLoading } = useCollection<LeaderboardEntry>(leaderboardQuery);
+    const db = getDb();
+    const q = query(
+      collectionGroup(db, 'leaderboard'),
+      orderBy('totalScore', 'desc'),
+      limit(10)
+    ) as unknown as Query<LeaderboardEntry>;
+    setQRef(q);
+  }, []);
+
+  const { data: leaderboardData, isLoading, error } =
+    useCollection<LeaderboardEntry>(qRef as unknown as Query<DocumentData>);
 
   return (
     <Card className="shadow-lg">
@@ -69,10 +75,15 @@ export default function LeaderboardPage() {
                 <TableCell colSpan={3} className="text-center">Loading leaderboard...</TableCell>
               </TableRow>
             )}
-            {leaderboardData && leaderboardData.map((player, index) => {
-              const rank = index + 1;
+            {error && (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center text-red-500">{error.message}</TableCell>
+              </TableRow>
+            )}
+            {leaderboardData?.map((player, i) => {
+              const rank = i + 1;
               return (
-                <TableRow key={player.id} className={player.id === user?.uid ? "bg-accent/50" : ""}>
+                <TableRow key={player.id}>
                   <TableCell className="font-bold text-lg">
                     <div className="flex items-center gap-2">
                       <Trophy className={`h-5 w-5 ${getRankColor(rank)}`} />
@@ -82,7 +93,7 @@ export default function LeaderboardPage() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar>
-                        <AvatarImage src={`https://picsum.photos/seed/${player.id}/40/40`} alt={player.name || 'User'} data-ai-hint="person portrait" />
+                        <AvatarImage src={`https://picsum.photos/seed/${player.id}/40/40`} alt={player.name || 'User'} />
                         <AvatarFallback>{player.name?.charAt(0) || 'U'}</AvatarFallback>
                       </Avatar>
                       <span className="font-medium">{player.name || 'Anonymous Player'}</span>
@@ -90,9 +101,9 @@ export default function LeaderboardPage() {
                   </TableCell>
                   <TableCell className="text-right font-mono">{player.totalScore?.toLocaleString() || 0}</TableCell>
                 </TableRow>
-              )
+              );
             })}
-             {!isLoading && (!leaderboardData || leaderboardData.length === 0) && (
+            {!isLoading && (!leaderboardData || leaderboardData.length === 0) && (
               <TableRow>
                 <TableCell colSpan={3} className="text-center">No players on the leaderboard yet.</TableCell>
               </TableRow>

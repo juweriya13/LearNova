@@ -1,0 +1,378 @@
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user's profile information.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The user's full name."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "qualification": {
+          "type": "string",
+          "description": "The user's highest qualification level (e.g., 10th Grade, College, University)."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "email",
+        "qualification"
+      ]
+    },
+    "QuizQuestion": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "QuizQuestion",
+      "type": "object",
+      "description": "Represents a single question in a quiz.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the QuizQuestion entity."
+        },
+        "qualification": {
+          "type": "string",
+          "description": "The qualification level this question is designed for (e.g., 10th Grade, College)."
+        },
+        "difficulty": {
+          "type": "string",
+          "description": "The difficulty level of the question (e.g., Easy, Medium, Hard)."
+        },
+        "questionText": {
+          "type": "string",
+          "description": "The text of the quiz question."
+        },
+        "options": {
+          "type": "array",
+          "description": "An array of possible answer options for the question.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "correctAnswer": {
+          "type": "string",
+          "description": "The correct answer to the question."
+        }
+      },
+      "required": [
+        "id",
+        "qualification",
+        "difficulty",
+        "questionText",
+        "options",
+        "correctAnswer"
+      ]
+    },
+    "UserProgress": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProgress",
+      "type": "object",
+      "description": "Represents a user's progress and scores on quizzes.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProgress entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N UserProgress)"
+        },
+        "quizId": {
+          "type": "string",
+          "description": "Reference to QuizQuestion. (Relationship: QuizQuestion 1:N UserProgress)"
+        },
+        "score": {
+          "type": "number",
+          "description": "The user's score on the quiz."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "The timestamp when the quiz was completed.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "quizId",
+        "score",
+        "timestamp"
+      ]
+    },
+    "LeaderboardEntry": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "LeaderboardEntry",
+      "type": "object",
+      "description": "Represents an entry in the leaderboard, tracking user scores and qualifications.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the LeaderboardEntry entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N LeaderboardEntry)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The user's name for display on the leaderboard."
+        },
+        "totalScore": {
+          "type": "number",
+          "description": "The user's total score across all quizzes."
+        },
+        "qualification": {
+          "type": "string",
+          "description": "The user's qualification level."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "name",
+        "totalScore",
+        "qualification"
+      ]
+    },
+    "Badge": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Badge",
+      "type": "object",
+      "description": "Represents a badge earned by a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Badge entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Badge)"
+        },
+        "badgeName": {
+          "type": "string",
+          "description": "The name of the badge (e.g., Quiz Master, Consistent Learner)."
+        },
+        "earnedDate": {
+          "type": "string",
+          "description": "The date when the badge was earned.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "badgeName",
+        "earnedDate"
+      ]
+    },
+    "Recommendation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Recommendation",
+      "type": "object",
+      "description": "Represents an AI-generated recommendation for a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Recommendation entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Recommendation)"
+        },
+        "weakTopic": {
+          "type": "string",
+          "description": "The topic the user needs to review."
+        },
+        "suggestedNextLevel": {
+          "type": "string",
+          "description": "The suggested difficulty level for the next quiz."
+        },
+        "tip": {
+          "type": "string",
+          "description": "A tip to help the user improve."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "weakTopic",
+        "suggestedNextLevel",
+        "tip"
+      ]
+    },
+    "ChatMessage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ChatMessage",
+      "type": "object",
+      "description": "Represents a message in the AI Tutor Chatbot.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ChatMessage entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N ChatMessage)"
+        },
+        "message": {
+          "type": "string",
+          "description": "The text of the message."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "The timestamp when the message was sent.",
+          "format": "date-time"
+        },
+        "isUser": {
+          "type": "boolean",
+          "description": "Flag indicating if the message was sent by the user or the AI Tutor."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "message",
+        "timestamp",
+        "isUser"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "users/{userId}/profile",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores user profile information, including name, email, and qualification.  This path ensures that only the user can access their profile data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "quizzes/{qualification}/{difficulty}",
+        "definition": {
+          "entityName": "QuizQuestion",
+          "schema": {
+            "$ref": "#/backend/entities/QuizQuestion"
+          },
+          "description": "Stores quiz questions, categorized by qualification and difficulty level. The qualification is denormalized here. This enables secure and efficient filtering of quizzes based on user qualification without needing to read user data in rules.",
+          "params": [
+            {
+              "name": "qualification",
+              "description": "The qualification level for the quiz (e.g., 10th Grade, College)."
+            },
+            {
+              "name": "difficulty",
+              "description": "The difficulty level of the quiz (e.g., Easy, Medium, Hard)."
+            }
+          ]
+        }
+      },
+      {
+        "path": "userProgress/{userId}/scores",
+        "definition": {
+          "entityName": "UserProgress",
+          "schema": {
+            "$ref": "#/backend/entities/UserProgress"
+          },
+          "description": "Stores the user's quiz scores and progress. Only the user can access their progress data.  ",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "leaderboard/{userId}",
+        "definition": {
+          "entityName": "LeaderboardEntry",
+          "schema": {
+            "$ref": "#/backend/entities/LeaderboardEntry"
+          },
+          "description": "Stores leaderboard entries for each user, including their name, total score, and qualification. This path allows anyone to read the leaderboard data but restricts write access.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "badges/{userId}",
+        "definition": {
+          "entityName": "Badge",
+          "schema": {
+            "$ref": "#/backend/entities/Badge"
+          },
+          "description": "Stores badges earned by each user. This path ensures only the user can read their badges.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "recommendations/{userId}/topics",
+        "definition": {
+          "entityName": "Recommendation",
+          "schema": {
+            "$ref": "#/backend/entities/Recommendation"
+          },
+          "description": "Stores AI-generated recommendations for each user, including weak topics, suggested levels, and tips. This ensures that only the user can read their recommendations.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "chats/{userId}/messages",
+        "definition": {
+          "entityName": "ChatMessage",
+          "schema": {
+            "$ref": "#/backend/entities/ChatMessage"
+          },
+          "description": "Stores chat messages between the user and the AI tutor. Only the user can access their chat messages.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support a personalized learning platform with adaptive quizzes, AI-based recommendations, and real-time leaderboards. Authorization Independence is achieved by storing user-specific data under their respective `users/{userId}` path and by denormalizing user qualifications into the `quizzes` collections, enabling secure and efficient data retrieval without requiring complex rule hierarchies or `get()` calls. Segregation is achieved by storing distinct data types in their own collections (e.g., `quizzes`, `userProgress`, `leaderboard`, `recommendations`). The structure supports QAPs by ensuring that list operations can be securely filtered based on user roles and data ownership. The `users/{userId}` hierarchy facilitates easy management of private user data, while the `quizzes/{qualification}/{difficulty}` structure allows for efficient retrieval of quiz questions based on a user's qualification level and the desired difficulty."
+  }
+}

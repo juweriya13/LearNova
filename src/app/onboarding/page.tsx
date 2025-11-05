@@ -22,6 +22,8 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/icons';
+import { Home } from 'lucide-react';
+import Link from 'next/link';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -32,7 +34,7 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Check if user profile already exists
-  const userProfileRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}/profile`, user.uid) : null, [user, firestore]);
+  const userProfileRef = useMemoFirebase(() => (user ? doc(firestore, `users/${user.uid}/profile`, user.uid) : null), [user, firestore]);
   const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
 
   useEffect(() => {
@@ -59,6 +61,11 @@ export default function OnboardingPage() {
     }
     setError(null);
     
+    if (!firestore) {
+        setError('Firestore not available');
+        return;
+    }
+
     const userDocRef = doc(firestore, `users/${user.uid}/profile`, user.uid);
     setDocumentNonBlocking(userDocRef, {
       id: user.uid,
@@ -125,6 +132,13 @@ export default function OnboardingPage() {
               Continue to Dashboard
             </Button>
           </form>
+           <div className="mt-4 flex justify-center">
+              <Button variant="outline" asChild>
+                <Link href="/dashboard">
+                  <Home className="mr-2 h-4 w-4" /> Go to Home
+                </Link>
+              </Button>
+            </div>
         </CardContent>
       </Card>
     </div>

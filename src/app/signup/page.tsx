@@ -15,7 +15,8 @@ import { Logo } from '@/components/icons';
 import { useRouter } from 'next/navigation';
 import { useAuth, useUser } from '@/firebase';
 import React, { useEffect, useState } from 'react';
-import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile } from 'firebase/auth';
+import { Home } from 'lucide-react';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -35,8 +36,13 @@ export default function SignupPage() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!auth) {
+        setError("Auth service not available");
+        return;
+    }
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(userCredential.user, { displayName: name });
       // The useEffect will catch the user creation and redirect to onboarding
     } catch (err: any) {
       setError(err.message);
@@ -45,6 +51,10 @@ export default function SignupPage() {
   
   const handleGoogleSignIn = async () => {
     setError(null);
+    if (!auth) {
+        setError("Auth service not available");
+        return;
+    }
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
@@ -118,6 +128,13 @@ export default function SignupPage() {
               Sign in
             </Link>
           </div>
+           <div className="mt-4 flex justify-center">
+              <Button variant="outline" asChild>
+                <Link href="/dashboard">
+                  <Home className="mr-2 h-4 w-4" /> Go to Home
+                </Link>
+              </Button>
+            </div>
         </CardContent>
       </Card>
     </div>

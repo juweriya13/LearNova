@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth, useUser } from '@/firebase';
 import React, { useEffect, useState } from 'react';
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { Home } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,8 +36,10 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard');
+      if (auth) {
+        await signInWithEmailAndPassword(auth, email, password);
+        router.push('/dashboard');
+      }
     } catch (err: any) {
       setError(err.message);
     }
@@ -45,9 +48,11 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setError(null);
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      router.push('/dashboard');
+      if (auth) {
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider);
+        router.push('/dashboard');
+      }
     } catch (err: any) {
       setError(err.message);
     }
@@ -114,6 +119,13 @@ export default function LoginPage() {
               Sign up
             </Link>
           </div>
+           <div className="mt-4 flex justify-center">
+              <Button variant="outline" asChild>
+                <Link href="/dashboard">
+                  <Home className="mr-2 h-4 w-4" /> Go to Home
+                </Link>
+              </Button>
+            </div>
         </CardContent>
       </Card>
     </div>

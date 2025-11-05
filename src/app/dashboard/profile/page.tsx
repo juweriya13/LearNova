@@ -26,7 +26,7 @@ export default function ProfilePage() {
   );
   const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
 
-  const [name, setName] = useState(userProfile?.name || '');
+  const [name, setName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {

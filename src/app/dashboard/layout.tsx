@@ -43,10 +43,8 @@ export default function DashboardLayout({
       router.push('/login');
     }
 
-    if (!isUserLoading && user && !isProfileLoading && !userProfile?.qualificationId) {
-        if (pathname !== '/onboarding') {
-            router.push('/onboarding');
-        }
+    if (user && !isProfileLoading && !userProfile?.qualificationId && pathname !== '/onboarding') {
+        router.push('/onboarding');
     }
   }, [user, isUserLoading, router, userProfile, isProfileLoading, pathname]);
 
@@ -65,7 +63,7 @@ export default function DashboardLayout({
     );
   }
   
-  if (!userProfile?.qualificationId) {
+  if (!userProfile?.qualificationId && pathname !== '/onboarding') {
     // We are redirecting, show a loading state
      return (
       <div className="flex min-h-screen items-center justify-center">

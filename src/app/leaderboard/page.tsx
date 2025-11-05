@@ -33,12 +33,12 @@ export default function LeaderboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   
+  // The query is memoized and will only be re-calculated if `firestore` changes.
+  // It will be `null` initially if `firestore` is not yet available.
   const leaderboardQuery = useMemoFirebase(() => {
-    if (!firestore) {
-      return null;
-    }
+    if (!firestore) return null; // Prevent query creation until firestore is ready
     return query(
-      collectionGroup(firestore, 'leaderboard'),
+      collectionGroup(firestore as Firestore, 'leaderboard'),
       orderBy('totalScore', 'desc'),
       limit(10)
     );

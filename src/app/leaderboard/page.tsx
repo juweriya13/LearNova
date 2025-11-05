@@ -38,7 +38,7 @@ export default function LeaderboardPage() {
       return null;
     }
     return query(
-      collectionGroup(firestore as Firestore, 'leaderboard'),
+      collectionGroup(firestore, 'leaderboard'),
       orderBy('totalScore', 'desc'),
       limit(10)
     );

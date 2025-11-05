@@ -11,10 +11,12 @@ import {
   Target,
   type LucideIcon,
   LogIn,
+  User
 } from 'lucide-react';
 
 export const navLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard/profile', label: 'Profile', icon: User },
   { href: '/quiz', label: 'Start Quiz', icon: HelpCircle },
   { href: '/tutor', label: 'AI Tutor', icon: MessageSquare },
   { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
@@ -67,5 +69,3 @@ export const publicNavLinks = [
   { href: '/login', label: 'Login', icon: LogIn },
   { href: '/signup', label: 'Sign Up', icon: LogIn },
 ];
-
-    

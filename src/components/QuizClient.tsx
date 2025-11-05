@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle, XCircle, ArrowRight, RotateCw } from 'lucide-react';
 import { Progress } from './ui/progress';
-import { useUser, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, collection, writeBatch, serverTimestamp, runTransaction, getDoc } from 'firebase/firestore';
 
 type QuizState = 'setup' | 'loading' | 'active' | 'result';
@@ -31,7 +31,7 @@ export default function QuizClient() {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  const userProfileRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}/profile`, user.uid) : null, [user, firestore]);
+  const userProfileRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}`) : null, [user, firestore]);
   const { data: userProfile } = useDoc(userProfileRef);
   
   const userProgressRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}/progress`, user.uid) : null, [user, firestore]);

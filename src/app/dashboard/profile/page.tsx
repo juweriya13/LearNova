@@ -11,8 +11,8 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useUser, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Pencil } from 'lucide-react';
 
@@ -22,7 +22,7 @@ export default function ProfilePage() {
   const { toast } = useToast();
 
   const userProfileRef = useMemoFirebase(
-    () => (user ? doc(firestore, `users/${user.uid}/profile`, user.uid) : null),
+    () => (user ? doc(firestore, `users/${user.uid}`) : null),
     [user, firestore]
   );
   const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
@@ -40,22 +40,24 @@ export default function ProfilePage() {
   const handleUpdateProfile = async () => {
     if (!user || !name || !firestore) return;
     setIsSaving(true);
-    const userDocRef = doc(firestore, `users/${user.uid}/profile`, user.uid);
-    
-    // Using the non-blocking update function
-    setDocumentNonBlocking(
-        userDocRef,
-        { name: name },
-        { merge: true }
-    );
-    
-    toast({
-        title: 'Profile Updated',
-        description: 'Your name has been successfully updated.',
-    });
-    
-    setIsSaving(false);
-    setIsEditing(false);
+    const userDocRef = doc(firestore, 'users', user.uid);
+    try {
+        await updateDoc(userDocRef, { name: name });
+        toast({
+            title: 'Profile Updated',
+            description: 'Your name has been successfully updated.',
+        });
+        setIsEditing(false);
+    } catch (error) {
+        console.error("Error updating profile: ", error);
+        toast({
+            variant: "destructive",
+            title: 'Update Failed',
+            description: 'Could not update your profile. Please try again.',
+        });
+    } finally {
+        setIsSaving(false);
+    }
   };
   
   const handleCancel = () => {

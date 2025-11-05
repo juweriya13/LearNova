@@ -26,7 +26,7 @@ export default function TutorClient() {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  const userProfileRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}/profile`, user.uid) : null, [user, firestore]);
+  const userProfileRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}`) : null, [user, firestore]);
   const { data: userProfile } = useDoc(userProfileRef);
 
   useEffect(() => {

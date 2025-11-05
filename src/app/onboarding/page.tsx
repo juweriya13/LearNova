@@ -1,9 +1,9 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useAuth, useUser, useFirestore, setDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
+import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import React, { useEffect, useState } from 'react';
-import { doc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { qualificationLevels } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,16 +33,13 @@ export default function OnboardingPage() {
   const [qualification, setQualification] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  // Check if user profile already exists
-  const userProfileRef = useMemoFirebase(() => (user ? doc(firestore, `users/${user.uid}/profile`, user.uid) : null), [user, firestore]);
+  const userProfileRef = useMemoFirebase(() => (user ? doc(firestore, `users/${user.uid}`) : null), [user, firestore]);
   const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
 
   useEffect(() => {
-    // If user is not loading, and they are not logged in, redirect to login
     if (!isUserLoading && !user) {
       router.push('/login');
     }
-    // If profile is not loading and it already exists, they have onboarded.
     if (!isProfileLoading && userProfile?.qualificationId) {
         router.push('/dashboard');
     }
@@ -66,34 +63,36 @@ export default function OnboardingPage() {
         return;
     }
 
-    const userDocRef = doc(firestore, `users/${user.uid}/profile`, user.uid);
-    setDocumentNonBlocking(userDocRef, {
-      id: user.uid,
-      name: user.displayName || 'Anonymous User',
-      email: user.email,
-      qualificationId: qualification,
-    }, { merge: true });
+    const userDocRef = doc(firestore, 'users', user.uid);
+    try {
+        await setDoc(userDocRef, {
+            id: user.uid,
+            name: user.displayName || 'Anonymous User',
+            email: user.email,
+            qualificationId: qualification,
+        }, { merge: true });
 
-    // also save qualification to a separate collection
-    const qualificationDocRef = doc(firestore, 'qualifications', qualification);
-    setDocumentNonBlocking(qualificationDocRef, {
-      id: qualification,
-      level: qualification,
-    }, { merge: true });
+        const qualificationDocRef = doc(firestore, 'qualifications', qualification);
+        await setDoc(qualificationDocRef, {
+            id: qualification,
+            level: qualification,
+        }, { merge: true });
 
-    router.push('/dashboard');
+        router.push('/dashboard');
+    } catch (error) {
+        console.error("Error saving qualification: ", error);
+        setError("Could not save your qualification. Please try again.");
+    }
   };
 
   if (isUserLoading || isProfileLoading) {
     return <div className="flex min-h-screen items-center justify-center"><p>Loading...</p></div>;
   }
   
-  // If user is loaded but not logged in, we wait for useEffect to redirect.
   if (!user) {
      return <div className="flex min-h-screen items-center justify-center"><p>Redirecting...</p></div>;
   }
 
-  // If user profile is loaded and exists, we wait for useEffect to redirect.
   if (userProfile?.qualificationId) {
      return <div className="flex min-h-screen items-center justify-center"><p>Redirecting...</p></div>;
   }

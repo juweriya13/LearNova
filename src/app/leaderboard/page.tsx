@@ -36,7 +36,7 @@ export default function LeaderboardPage() {
   const leaderboardQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(
-      collectionGroup(firestore as Firestore, 'leaderboard'), 
+      collectionGroup(firestore, 'leaderboard'),
       orderBy('totalScore', 'desc'),
       limit(10)
     );

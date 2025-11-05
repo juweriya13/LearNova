@@ -1,154 +1,182 @@
 /**
- * @fileoverview Firestore Security Rules for the AI-Driven Personalized Learning Platform.
+ * @file Firestore Security Rules for AI-Driven Personalized Learning Platform (LearnVerse AI).
  *
- * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for private data and allows public read access to leaderboard data.
+ * @Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for private user data (profile, progress, recommendations, chats).
+ * Qualifications and Leaderboard entries are segregated by qualification ID for controlled access and querying.
  *
- * Data Structure:
- * - User-specific data (profile, progress, badges, recommendations, chat logs) is nested under /users/{userId}.
- * - Quizzes are stored under /quizzes/{qualification}/{difficulty}.
- * - Leaderboard data is stored under /leaderboard/{userId}.
+ * @Data Structure:
+ * - /users/{userId}/profile: User profile information, owned by the user.
+ * - /users/{userId}/progress: User progress data, owned by the user.
+ * - /users/{userId}/badges/{badgeId}: User badges, owned by the user.
+ * - /users/{userId}/recommendations/{recommendationId}: AI recommendations for the user, owned by the user.
+ * - /users/{userId}/chats/{chatMessageId}: Chat logs for the user, owned by the user.
+ * - /qualifications/{qualificationId}: Qualification levels (e.g., 1st Grade, College). Write access restricted.
+ * - /quizzes/{qualificationId}/{difficulty}/{quizId}: Quiz questions, grouped by qualification and difficulty.
+ * - /leaderboard/{qualificationId}/{leaderboardEntryId}: Leaderboard entries, grouped by qualification.
  *
- * Key Security Decisions:
- * - User listing is disallowed.
- * - Leaderboard data is publicly readable but only updatable by a backend process.
- * - Default security posture for ambiguous relationships is strict owner-only access.
+ * @Key Security Decisions:
+ * - User data is strictly controlled via path-based ownership.
+ * - Qualifications and Leaderboard Entries write access is only for authorized users.
+ * - Read operations are generally open unless data is private.
+ * - Listing user-owned subcollections is allowed for the owner.
  *
- * Denormalization for Authorization:
- * - The `quizzes` collection denormalizes `qualification` into the document path to enable secure filtering of quizzes without needing to read user data in rules.
+ * @Denormalization for Authorization:
+ * - The `quizzes` subcollection denormalizes `qualificationId`, so rules can validate the user's qualification without needing to read the qualification document itself.
+ * - The `leaderboard` subcollection denormalizes `qualificationId` for efficient querying and authorization independence.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Checks if the current user is signed in.
-     */
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /**
-     * @description Checks if the current user is the owner of the document.
-     */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    /**
-     * @description Checks if the current user is the owner of the document and the document exists.
-     */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
-
-    /**
-     * @description Rules for user profiles.
+     * @description Secure user profiles under /users/{userId}/profile. Only the user can read/write their own profile.
      * @path /users/{userId}/profile
-     * @allow (create) User 'user_abc' can create their own profile.
-     * @deny (create) User 'user_xyz' cannot create profile for 'user_abc'.
-     * @allow (get, list, update, delete) User 'user_abc' can read and modify their own profile.
-     * @deny (get, list, update, delete) User 'user_xyz' cannot read or modify profile for 'user_abc'.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create, update, delete) User with ID 'user123' can modify their own profile.
+     * @deny (create, update, delete) User with ID 'user456' cannot modify the profile of 'user123'.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/profile {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
       allow get: if isOwner(userId);
-      allow list: if false; // User listing is not allowed.
+      allow list: if false;
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id; // Enforce immutability of the user ID.
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Rules for quiz questions, categorized by qualification and difficulty.
-     * @path /quizzes/{qualification}/{difficulty}
-     * @allow (get, list) Anyone can read the quizzes.
-     * @deny (create, update, delete) No one can modify the quizzes through the client (only backend).
-     * @principle Allows public read access while restricting write access.
+     * @description Secure user progress data under /users/{userId}/progress. Only the user can read/write their own progress.
+     * @path /users/{userId}/progress
+     * @allow (create, update, delete) User with ID 'user123' can modify their own progress data.
+     * @deny (create, update, delete) User with ID 'user456' cannot modify the progress data of 'user123'.
+     * @principle Enforces document ownership for writes.
      */
-    match /quizzes/{qualification}/{difficulty} {
-      allow get, list: if true;
-      allow create, update, delete: if false; // Only the backend can modify quizzes.
+    match /users/{userId}/progress {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Rules for user progress scores.
-     * @path /userProgress/{userId}/scores
-     * @allow (create) User 'user_abc' can create their own progress entry.
-     * @deny (create) User 'user_xyz' cannot create progress entry for 'user_abc'.
-     * @allow (get, list, update, delete) User 'user_abc' can read and modify their own progress entries.
-     * @deny (get, list, update, delete) User 'user_xyz' cannot read or modify progress entries for 'user_abc'.
-     * @principle Enforces document ownership for all operations.
+     * @description Secure user badges under /users/{userId}/badges/{badgeId}. Only the user can read/write their own badges.
+     * @path /users/{userId}/badges/{badgeId}
+     * @allow (create, update, delete) User with ID 'user123' can modify their own badges.
+     * @deny (create, update, delete) User with ID 'user456' cannot modify the badges of 'user123'.
+     * @principle Enforces document ownership for writes.
      */
-    match /userProgress/{userId}/scores {
+    match /users/{userId}/badges/{badgeId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId; // Enforce immutability of the user ID.
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Rules for leaderboard entries.
-     * @path /leaderboard/{userId}
-     * @allow (get, list) Anyone can read the leaderboard.
-     * @deny (create, update, delete) No one can modify the leaderboard through the client (only backend).
-     * @principle Allows public read access while restricting write access.
+     * @description Secure AI recommendations under /users/{userId}/recommendations/{recommendationId}. Only the user can read/write their own recommendations.
+     * @path /users/{userId}/recommendations/{recommendationId}
+     * @allow (create, update, delete) User with ID 'user123' can modify their own recommendations.
+     * @deny (create, update, delete) User with ID 'user456' cannot modify the recommendations of 'user123'.
+     * @principle Enforces document ownership for writes.
      */
-    match /leaderboard/{userId} {
-      allow get, list: if true;
-      allow create, update, delete: if false; // Only the backend can modify the leaderboard.
-    }
-
-    /**
-     * @description Rules for badges earned by users.
-     * @path /badges/{userId}
-     * @allow (create) User 'user_abc' can create their own badge entry.
-     * @deny (create) User 'user_xyz' cannot create a badge entry for 'user_abc'.
-     * @allow (get, list, update, delete) User 'user_abc' can read and modify their own badges.
-     * @deny (get, list, update, delete) User 'user_xyz' cannot read or modify badges for 'user_abc'.
-     * @principle Enforces document ownership for all operations.
-     */
-    match /badges/{userId} {
+    match /users/{userId}/recommendations/{recommendationId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId; // Enforce immutability of the user ID.
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Rules for AI-generated recommendations for users.
-     * @path /recommendations/{userId}/topics
-     * @allow (create) User 'user_abc' can create their own recommendations.
-     * @deny (create) User 'user_xyz' cannot create recommendations for 'user_abc'.
-     * @allow (get, list, update, delete) User 'user_abc' can read and modify their own recommendations.
-     * @deny (get, list, update, delete) User 'user_xyz' cannot read or modify recommendations for 'user_abc'.
-     * @principle Enforces document ownership for all operations.
+     * @description Secure chat messages under /users/{userId}/chats/{chatMessageId}. Only the user can read/write their own chat logs.
+     * @path /users/{userId}/chats/{chatMessageId}
+     * @allow (create, update, delete) User with ID 'user123' can modify their own chat logs.
+     * @deny (create, update, delete) User with ID 'user456' cannot modify the chat logs of 'user123'.
+     * @principle Enforces document ownership for writes.
      */
-    match /recommendations/{userId}/topics {
+    match /users/{userId}/chats/{chatMessageId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId; // Enforce immutability of the user ID.
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Rules for chat messages between users and the AI tutor.
-     * @path /chats/{userId}/messages
-     * @allow (create) User 'user_abc' can create their own chat messages.
-     * @deny (create) User 'user_xyz' cannot create chat messages for 'user_abc'.
-     * @allow (get, list, update, delete) User 'user_abc' can read and modify their own chat messages.
-     * @deny (get, list, update, delete) User 'user_xyz' cannot read or modify chat messages for 'user_abc'.
-     * @principle Enforces document ownership for all operations.
+     * @description Secure qualifications under /qualifications/{qualificationId}.  Write access is only for authorized users.
+     * @path /qualifications/{qualificationId}
+     * @allow get Anyone can read qualifications.
+     * @deny create, update, delete: Only authorized users (e.g., admins) can create, update, or delete qualifications.
+     * @principle Restricts write access to a limited set of users.
      */
-    match /chats/{userId}/messages {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId; // Enforce immutability of the user ID.
-      allow delete: if isExistingOwner(userId);
+    match /qualifications/{qualificationId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if false; // TODO: Add admin role check
+      allow update: if false; // TODO: Add admin role check
+      allow delete: if false; // TODO: Add admin role check
+    }
+
+    /**
+     * @description Secure quizzes under /quizzes/{qualificationId}/{difficulty}/{quizId}.  Anyone can read quizzes.
+     * @path /quizzes/{qualificationId}/{difficulty}/{quizId}
+     * @allow get: Anyone can read quizzes.
+     * @deny create, update, delete: Only authorized users (e.g., admins) can create, update, or delete quizzes.
+     * @principle Restricts write access to a limited set of users.
+     */
+    match /quizzes/{qualificationId}/{difficulty}/{quizId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if false; // TODO: Add admin role check
+      allow update: if false; // TODO: Add admin role check
+      allow delete: if false; // TODO: Add admin role check
+    }
+
+    /**
+     * @description Secure leaderboard entries under /leaderboard/{qualificationId}/{leaderboardEntryId}.  Anyone can read the leaderboard.
+     * @path /leaderboard/{qualificationId}/{leaderboardEntryId}
+     * @allow get: Anyone can read leaderboard entries.
+     * @deny create, update, delete: Only authorized users (e.g., the backend) can create, update, or delete leaderboard entries.
+     * @principle Restricts write access to a limited set of users (the backend).
+     */
+    match /leaderboard/{qualificationId}/{leaderboardEntryId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if false; // TODO: Add backend service account check
+      allow update: if false; // TODO: Add backend service account check
+      allow delete: if false; // TODO: Add backend service account check
     }
   }
 }

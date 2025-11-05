@@ -81,7 +81,7 @@ export default function LeaderboardPage() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar>
-                        <AvatarImage src={`https://picsum.photos/seed/${player.id}/40/40`} alt={player.name} data-ai-hint="person portrait" />
+                        <AvatarImage src={`https://picsum.photos/seed/${player.id}/40/40`} alt={player.name || 'User'} data-ai-hint="person portrait" />
                         <AvatarFallback>{player.name?.charAt(0) || 'U'}</AvatarFallback>
                       </Avatar>
                       <span className="font-medium">{player.name}</span>

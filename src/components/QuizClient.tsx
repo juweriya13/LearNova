@@ -97,8 +97,11 @@ export default function QuizClient() {
 
     try {
         await runTransaction(firestore, async (transaction) => {
+            // --- READS FIRST ---
             const progressDoc = await transaction.get(progressRef);
+            const subjectDoc = await transaction.get(subjectProgressRef);
 
+            // --- WRITES SECOND ---
             if (!progressDoc.exists()) {
                 // First time user is taking a quiz, create progress doc
                 transaction.set(progressRef, {
@@ -115,11 +118,11 @@ export default function QuizClient() {
                 transaction.update(progressRef, {
                     totalQuizzes: newTotalQuizzes,
                     averageScore: newAverageScore,
+                    totalScore: newTotalScore, // Also update total score
                 });
             }
 
             // Update subject progress
-            const subjectDoc = await transaction.get(subjectProgressRef);
             if (!subjectDoc.exists()) {
                  transaction.set(subjectProgressRef, {
                     subjectId: topic,
@@ -169,6 +172,7 @@ export default function QuizClient() {
 
   if (quizState === 'setup') {
     return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-2xl mx-auto shadow-lg">
         <CardHeader>
           <CardTitle>Ready for a Challenge?</CardTitle>
@@ -189,6 +193,7 @@ export default function QuizClient() {
           </Button>
         </CardFooter>
       </Card>
+      </div>
     );
   }
   
@@ -196,6 +201,7 @@ export default function QuizClient() {
     const finalScore = score + (selectedAnswer === questions[currentQuestionIndex].correctAnswer ? 1 : 0);
     const percentage = Math.round((finalScore / questions.length) * 100);
     return (
+       <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-2xl mx-auto text-center shadow-lg">
         <CardHeader>
           <CardTitle>Quiz Complete!</CardTitle>
@@ -215,12 +221,14 @@ export default function QuizClient() {
           </Button>
         </CardFooter>
       </Card>
+      </div>
     );
   }
 
 
   const currentQuestion = questions[currentQuestionIndex];
   return (
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
     <Card className="w-full max-w-2xl mx-auto shadow-lg">
       <CardHeader>
         <Progress value={((currentQuestionIndex + 1) / questions.length) * 100} className="h-2 mb-4" />
@@ -270,5 +278,6 @@ export default function QuizClient() {
         )}
       </CardFooter>
     </Card>
+    </div>
   );
 }

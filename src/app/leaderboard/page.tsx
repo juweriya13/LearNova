@@ -36,6 +36,8 @@ export default function LeaderboardPage() {
   // The query is memoized and will only be created when firestore is available.
   const leaderboardQuery = useMemoFirebase(() => {
     if (!firestore) return null;
+    // Note: collectionGroup queries require a corresponding index in firestore.rules
+    // You'll need to create a composite index in the Firebase console for this to work.
     return query(
       collectionGroup(firestore as Firestore, 'leaderboard'), 
       orderBy('totalScore', 'desc'),

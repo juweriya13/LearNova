@@ -11,9 +11,16 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collectionGroup, query, orderBy, limit } from 'firebase/firestore';
+import { collectionGroup, query, orderBy, limit, Firestore } from 'firebase/firestore';
 import { Trophy } from 'lucide-react';
-import type { LeaderboardEntry } from '@/lib/data';
+
+// Define a type for your leaderboard entry based on your data structure
+interface LeaderboardEntry {
+  id: string;
+  name?: string;
+  totalScore?: number;
+  // Add other fields from your leaderboard documents
+}
 
 const getRankColor = (rank: number) => {
   if (rank === 1) return 'text-yellow-400';
@@ -26,14 +33,15 @@ export default function LeaderboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   
-  const leaderboardQuery = useMemoFirebase(() => 
-    query(
-      collectionGroup(firestore, 'leaderboard'), 
+  // The query is memoized and will only be created when firestore is available.
+  const leaderboardQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+      collectionGroup(firestore as Firestore, 'leaderboard'), 
       orderBy('totalScore', 'desc'),
       limit(10)
-    ), 
-    [firestore]
-  );
+    );
+  }, [firestore]);
   
   const { data: leaderboardData, isLoading } = useCollection<LeaderboardEntry>(leaderboardQuery);
 
@@ -77,7 +85,7 @@ export default function LeaderboardPage() {
                       <span className="font-medium">{player.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right font-mono">{player.totalScore?.toLocaleString()}</TableCell>
+                  <TableCell className="text-right font-mono">{player.totalScore?.toLocaleString() || 0}</TableCell>
                 </TableRow>
               )
             })}

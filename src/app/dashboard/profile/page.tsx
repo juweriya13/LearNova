@@ -38,18 +38,22 @@ export default function ProfilePage() {
   }, [userProfile]);
 
   const handleUpdateProfile = async () => {
-    if (!user || !name) return;
+    if (!user || !name || !firestore) return;
     setIsSaving(true);
     const userDocRef = doc(firestore, `users/${user.uid}/profile`, user.uid);
+    
+    // Using the non-blocking update function
     setDocumentNonBlocking(
         userDocRef,
         { name: name },
         { merge: true }
     );
+    
     toast({
         title: 'Profile Updated',
         description: 'Your name has been successfully updated.',
     });
+    
     setIsSaving(false);
     setIsEditing(false);
   };

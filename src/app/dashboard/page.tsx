@@ -14,11 +14,17 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { dashboardStats, subjects, badges } from '@/lib/data';
+import { dashboardStats, badges } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { useUser, useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
-import { BookUser } from 'lucide-react';
+import { BookUser, BrainCircuit, BookOpen } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+
+const iconMap: { [key: string]: LucideIcon } = {
+  BrainCircuit,
+  BookOpen,
+};
 
 export default function DashboardPage() {
   const { user } = useUser();
@@ -32,6 +38,9 @@ export default function DashboardPage() {
 
   const userBadgesRef = useMemoFirebase(() => user ? collection(firestore, `users/${user.uid}/badges`) : null, [user, firestore]);
   const { data: userBadges } = useCollection(userBadgesRef);
+  
+  const subjectsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'subjects') : null, [firestore]);
+  const { data: subjects, isLoading: subjectsLoading } = useCollection(subjectsQuery);
 
   const welcomeName = userProfile?.name?.split(' ')[0] || 'Learner';
 
@@ -79,7 +88,8 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {subjects.map((subject) => (
+            {subjectsLoading && <p>Loading subjects...</p>}
+            {subjects && subjects.map((subject) => (
               <div key={subject.name} className="space-y-2">
                 <div className="flex justify-between">
                   <p className="font-medium">{subject.name}</p>
@@ -90,6 +100,9 @@ export default function DashboardPage() {
                 <Progress value={subject.progress} className="h-2" />
               </div>
             ))}
+             {!subjectsLoading && (!subjects || subjects.length === 0) && (
+                <p className="text-muted-foreground">No subjects found.</p>
+             )}
           </CardContent>
         </Card>
 
@@ -139,3 +152,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

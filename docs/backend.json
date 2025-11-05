@@ -319,6 +319,36 @@
         "sender",
         "timestamp"
       ]
+    },
+    "Subject": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Subject",
+      "type": "object",
+      "description": "Represents a subject available for learning.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the subject."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the subject."
+        },
+        "icon": {
+          "type": "string",
+          "description": "The name of the lucide-react icon for the subject."
+        },
+        "progress": {
+          "type": "number",
+          "description": "Default progress for a new user, typically 0."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "icon",
+        "progress"
+      ]
     }
   },
   "auth": {
@@ -480,8 +510,25 @@
             }
           ]
         }
+      },
+      {
+        "path": "subjects/{subjectId}",
+        "definition": {
+          "entityName": "Subject",
+          "schema": {
+            "$ref": "#/backend/entities/Subject"
+          },
+          "description": "Stores the list of available subjects.",
+          "params": [
+            {
+              "name": "subjectId",
+              "description": "The unique identifier for the subject."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is designed to ensure Authorization Independence, support the required QAPs (using segregation and path-based ownership), and maintain data integrity. The structure leverages path-based ownership and denormalization to avoid `get()` calls in security rules, ensuring atomic operations and simplifying security logic.\n\n*   **users/{userId}/profile:** Stores user profile information. This is a private data collection, secured via path-based ownership.\n*   **qualifications/{qualificationId}:** Stores qualification levels (e.g., 1st Grade, College). This collection may require more complex rules depending on who can create/modify qualifications. For simplicity, we assume only admins can manage these. To ensure Authorization Independence, the qualification level is denormalized to other relevant collections (UserProgress, LeaderboardEntry, Quizzes).\n*   **users/{userId}/progress:** Stores the progress of each user. This collection contains the average score and total number of quizzes taken.\n*   **users/{userId}/badges/{badgeId}:** Stores badges earned by each user. Path-based ownership makes security rules straightforward.\n*   **quizzes/{qualificationId}/{difficulty}/{quizId}:** Stores quiz questions, categorized by qualification and difficulty level. Since the qualification is part of the path, it is very easy to query for a quiz corresponding to a given qualification.\n*   **leaderboard/{qualificationId}/{leaderboardEntryId}:** Stores leaderboard entries, grouped by qualification. Includes denormalized `totalScore` and `qualificationId` for efficient querying and authorization independence.\n*   **users/{userId}/recommendations/{recommendationId}:** Stores AI-generated recommendations for each user. This leverages path-based ownership for simple access control.\n*   **users/{userId}/chats/{chatMessageId}:** Stores chat messages for each user.  Path-based ownership ensures only the user can access their chat logs.\n\nThis structure achieves Authorization Independence by avoiding `get()` calls in security rules. For instance, the `quizzes` subcollection denormalizes `qualificationId`, so rules can validate the user's qualification without needing to read the qualification document itself. Path-based ownership, used in `users/{userId}`, provides inherent ownership constraints without requiring additional reads. \n\nThis structure facilitates secure `list` operations (QAPs). By segregating data into collections with homogeneous security postures (e.g., private user data under `/users/{userId}`), rules can be written to allow listing only resources the user owns or has access to. The leaderboard is segregated by qualification so it can be queried for specific educational levels."
+    "reasoning": "The Firestore structure is designed to ensure Authorization Independence, support the required QAPs (using segregation and path-based ownership), and maintain data integrity. The structure leverages path-based ownership and denormalization to avoid `get()` calls in security rules, ensuring atomic operations and simplifying security logic.\n\n*   **users/{userId}/profile:** Stores user profile information. This is a private data collection, secured via path-based ownership.\n*   **qualifications/{qualificationId}:** Stores qualification levels (e.g., 1st Grade, College). This collection may require more complex rules depending on who can create/modify qualifications. For simplicity, we assume only admins can manage these. To ensure Authorization Independence, the qualification level is denormalized to other relevant collections (UserProgress, LeaderboardEntry, Quizzes).\n*   **users/{userId}/progress:** Stores the progress of each user. This collection contains the average score and total number of quizzes taken.\n*   **users/{userId}/badges/{badgeId}:** Stores badges earned by each user. Path-based ownership makes security rules straightforward.\n*   **quizzes/{qualificationId}/{difficulty}/{quizId}:** Stores quiz questions, categorized by qualification and difficulty level. Since the qualification is part of the path, it is very easy to query for a quiz corresponding to a given qualification.\n*   **leaderboard/{qualificationId}/{leaderboardEntryId}:** Stores leaderboard entries, grouped by qualification. Includes denormalized `totalScore` and `qualificationId` for efficient querying and authorization independence.\n*   **users/{userId}/recommendations/{recommendationId}:** Stores AI-generated recommendations for each user. This leverages path-based ownership for simple access control.\n*   **users/{userId}/chats/{chatMessageId}:** Stores chat messages for each user.  Path-based ownership ensures only the user can access their chat logs.\n*   **subjects/{subjectId}:** Stores the list of available subjects, allowing for dynamic content management.\n\nThis structure achieves Authorization Independence by avoiding `get()` calls in security rules. For instance, the `quizzes` subcollection denormalizes `qualificationId`, so rules can validate the user's qualification without needing to read the qualification document itself. Path-based ownership, used in `users/{userId}`, provides inherent ownership constraints without requiring additional reads. \n\nThis structure facilitates secure `list` operations (QAPs). By segregating data into collections with homogeneous security postures (e.g., private user data under `/users/{userId}`), rules can be written to allow listing only resources the user owns or has access to. The leaderboard is segregated by qualification so it can be queried for specific educational levels."
   }
 }
+    

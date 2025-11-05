@@ -67,3 +67,5 @@ export const publicNavLinks = [
   { href: '/login', label: 'Login', icon: LogIn },
   { href: '/signup', label: 'Sign Up', icon: LogIn },
 ];
+
+    

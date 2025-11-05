@@ -14,6 +14,7 @@
  * - /qualifications/{qualificationId}: Qualification levels (e.g., 1st Grade, College). Write access restricted.
  * - /quizzes/{qualificationId}/{difficulty}/{quizId}: Quiz questions, grouped by qualification and difficulty.
  * - /leaderboard/{qualificationId}/{leaderboardEntryId}: Leaderboard entries, grouped by qualification.
+ * - /subjects/{subjectId}: List of available subjects. Read-only for clients.
  *
  * @Key Security Decisions:
  * - User data is strictly controlled via path-based ownership.
@@ -93,5 +94,23 @@ service cloud.firestore {
       allow update: if false; // TODO: Add backend service account check
       allow delete: if false; // TODO: Add backend service account check
     }
+    
+    /**
+     * @description Secure subjects under /subjects/{subjectId}.  Anyone can read subjects.
+     * @path /subjects/{subjectId}
+     * @allow get: Anyone can read subjects.
+     * @allow list: Anyone can read subjects.
+     * @deny create, update, delete: Only authorized users (e.g., admins) can create, update, or delete subjects.
+     * @principle Restricts write access to a limited set of users.
+     */
+    match /subjects/{subjectId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if false; // TODO: Add admin role check
+      allow update: if false; // TODO: Add admin role check
+      allow delete: if false; // TODO: Add admin role check
+    }
   }
 }
+
+    

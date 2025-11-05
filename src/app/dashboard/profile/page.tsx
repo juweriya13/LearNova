@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -29,11 +29,11 @@ export default function ProfilePage() {
   const [name, setName] = useState(userProfile?.name || '');
   const [isSaving, setIsSaving] = useState(false);
 
-  useState(() => {
+  useEffect(() => {
     if (userProfile?.name) {
       setName(userProfile.name);
     }
-  });
+  }, [userProfile]);
 
   const handleUpdateProfile = async () => {
     if (!user || !name) return;

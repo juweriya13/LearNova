@@ -10,9 +10,10 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collectionGroup, query, orderBy, limit, type Firestore } from 'firebase/firestore';
+import { useUser, useCollection, useFirestore } from '@/firebase';
+import { collectionGroup, query, orderBy, limit, type Firestore, type Query } from 'firebase/firestore';
 import { Trophy } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 // Define a type for your leaderboard entry based on your data structure
 interface LeaderboardEntry {
@@ -32,17 +33,18 @@ const getRankColor = (rank: number) => {
 export default function LeaderboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const [leaderboardQuery, setLeaderboardQuery] = useState<Query | null>(null);
   
-  // The query is memoized and will only be re-calculated if `firestore` changes.
-  // It will be `null` initially if `firestore` is not yet available.
-  const leaderboardQuery = useMemoFirebase(() => {
-    if (!firestore) return null; // Prevent query creation until firestore is ready
-    return query(
-      collectionGroup(firestore as Firestore, 'leaderboard'),
-      orderBy('totalScore', 'desc'),
-      limit(10)
-    );
-  }, [firestore]); 
+  useEffect(() => {
+    if (firestore) {
+      const q = query(
+        collectionGroup(firestore as Firestore, 'leaderboard'),
+        orderBy('totalScore', 'desc'),
+        limit(10)
+      );
+      setLeaderboardQuery(q);
+    }
+  }, [firestore]);
   
   const { data: leaderboardData, isLoading } = useCollection<LeaderboardEntry>(leaderboardQuery);
 

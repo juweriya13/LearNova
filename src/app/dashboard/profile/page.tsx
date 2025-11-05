@@ -14,7 +14,8 @@ import { Label } from '@/components/ui/label';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Pencil } from 'lucide-react';
+import { Home, Pencil } from 'lucide-react';
+import Link from 'next/link';
 
 export default function ProfilePage() {
   const { user } = useUser();
@@ -122,6 +123,13 @@ export default function ProfilePage() {
                         </Button>
                     </div>
                 )}
+                 <div className="mt-6 flex justify-center border-t pt-6">
+                    <Button variant="outline" asChild>
+                        <Link href="/dashboard">
+                        <Home className="mr-2 h-4 w-4" /> Go to Home
+                        </Link>
+                    </Button>
+                </div>
             </>
         )}
       </CardContent>

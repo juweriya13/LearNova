@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { useUser, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { Pencil } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user } = useUser();
@@ -27,6 +28,7 @@ export default function ProfilePage() {
   const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
 
   const [name, setName] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -49,13 +51,29 @@ export default function ProfilePage() {
         description: 'Your name has been successfully updated.',
     });
     setIsSaving(false);
+    setIsEditing(false);
   };
   
+  const handleCancel = () => {
+    if(userProfile?.name){
+        setName(userProfile.name);
+    }
+    setIsEditing(false);
+  }
+
   return (
     <Card className="max-w-2xl mx-auto shadow-lg">
-      <CardHeader>
-        <CardTitle>My Profile</CardTitle>
-        <CardDescription>View and manage your profile details.</CardDescription>
+      <CardHeader className="flex flex-row items-start justify-between">
+        <div>
+            <CardTitle>My Profile</CardTitle>
+            <CardDescription>View and manage your profile details.</CardDescription>
+        </div>
+        {!isEditing && (
+            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit Profile
+            </Button>
+        )}
       </CardHeader>
       <CardContent className="space-y-6">
         {isProfileLoading ? (
@@ -69,6 +87,7 @@ export default function ProfilePage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Your name"
+                    disabled={!isEditing}
                     />
                 </div>
                 <div className="space-y-2">
@@ -87,11 +106,16 @@ export default function ProfilePage() {
                     disabled
                     />
                 </div>
-                <div>
-                    <Button onClick={handleUpdateProfile} disabled={isSaving}>
-                        {isSaving ? 'Saving...' : 'Save Changes'}
-                    </Button>
-                </div>
+                {isEditing && (
+                    <div className="flex space-x-2">
+                        <Button onClick={handleUpdateProfile} disabled={isSaving}>
+                            {isSaving ? 'Saving...' : 'Save Changes'}
+                        </Button>
+                         <Button variant="ghost" onClick={handleCancel}>
+                            Cancel
+                        </Button>
+                    </div>
+                )}
             </>
         )}
       </CardContent>

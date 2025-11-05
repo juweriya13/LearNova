@@ -12,8 +12,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle, XCircle, ArrowRight, RotateCw } from 'lucide-react';
 import { Progress } from './ui/progress';
-import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { doc, collection, writeBatch, serverTimestamp, runTransaction, getDoc } from 'firebase/firestore';
 
 type QuizState = 'setup' | 'loading' | 'active' | 'result';
 type Question = GenerateQuizQuestionsOutput['questions'][0];
@@ -33,6 +33,9 @@ export default function QuizClient() {
 
   const userProfileRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}/profile`, user.uid) : null, [user, firestore]);
   const { data: userProfile } = useDoc(userProfileRef);
+  
+  const userProgressRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}/progress`, user.uid) : null, [user, firestore]);
+  const { data: userProgress } = useDoc(userProgressRef);
 
   const [educationLevel, setEducationLevel] = useState<string | undefined>(undefined);
 
@@ -45,7 +48,6 @@ export default function QuizClient() {
 
   const handleStartQuiz = () => {
     if (!educationLevel) {
-        // Optionally, handle the case where education level is not yet available
         console.error("Education level not set.");
         return;
     }
@@ -79,7 +81,60 @@ export default function QuizClient() {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
+      handleQuizCompletion();
       setQuizState('result');
+    }
+  };
+  
+  const handleQuizCompletion = async () => {
+    if (!user || !firestore) return;
+
+    const finalScore = score + (selectedAnswer === questions[currentQuestionIndex].correctAnswer ? 1 : 0);
+    const percentage = (finalScore / questions.length) * 100;
+
+    const progressRef = doc(firestore, `users/${user.uid}/progress`, user.uid);
+    const subjectProgressRef = doc(firestore, `users/${user.uid}/subjectsProgress`, topic.toLowerCase().replace(/\s/g, '-'));
+
+    try {
+        await runTransaction(firestore, async (transaction) => {
+            const progressDoc = await transaction.get(progressRef);
+
+            if (!progressDoc.exists()) {
+                // First time user is taking a quiz, create progress doc
+                transaction.set(progressRef, {
+                    totalQuizzes: 1,
+                    totalScore: percentage,
+                    averageScore: percentage,
+                });
+            } else {
+                const data = progressDoc.data();
+                const newTotalQuizzes = (data.totalQuizzes || 0) + 1;
+                const newTotalScore = (data.totalScore || 0) + percentage;
+                const newAverageScore = newTotalScore / newTotalQuizzes;
+
+                transaction.update(progressRef, {
+                    totalQuizzes: newTotalQuizzes,
+                    averageScore: newAverageScore,
+                });
+            }
+
+            // Update subject progress
+            const subjectDoc = await transaction.get(subjectProgressRef);
+            if (!subjectDoc.exists()) {
+                 transaction.set(subjectProgressRef, {
+                    subjectId: topic,
+                    progress: percentage,
+                    lastActivity: serverTimestamp(),
+                });
+            } else {
+                 transaction.update(subjectProgressRef, {
+                    progress: percentage,
+                    lastActivity: serverTimestamp(),
+                });
+            }
+        });
+    } catch (e) {
+        console.error("Transaction failed: ", e);
     }
   };
 
@@ -136,9 +191,10 @@ export default function QuizClient() {
       </Card>
     );
   }
-
+  
   if (quizState === 'result') {
-    const percentage = Math.round((score / questions.length) * 100);
+    const finalScore = score + (selectedAnswer === questions[currentQuestionIndex].correctAnswer ? 1 : 0);
+    const percentage = Math.round((finalScore / questions.length) * 100);
     return (
       <Card className="w-full max-w-2xl mx-auto text-center shadow-lg">
         <CardHeader>
@@ -146,7 +202,7 @@ export default function QuizClient() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-lg">You scored</p>
-          <p className="text-5xl font-bold">{score} / {questions.length}</p>
+          <p className="text-5xl font-bold">{finalScore} / {questions.length}</p>
           <div className="space-y-2">
             <Progress value={percentage} className="w-full h-3" />
             <p className="text-xl font-medium">{percentage}%</p>
@@ -161,6 +217,7 @@ export default function QuizClient() {
       </Card>
     );
   }
+
 
   const currentQuestion = questions[currentQuestionIndex];
   return (
@@ -208,7 +265,7 @@ export default function QuizClient() {
           <Button onClick={handleAnswerSubmit} disabled={!selectedAnswer}>Submit</Button>
         ) : (
           <Button onClick={handleNextQuestion}>
-            Next Question <ArrowRight className="ml-2" />
+            {currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'View Results'} <ArrowRight className="ml-2" />
           </Button>
         )}
       </CardFooter>

@@ -14,7 +14,7 @@ import {z} from 'genkit';
 const ProvideAITutorAssistanceInputSchema = z.object({
   question: z.string().describe('The question asked by the student.'),
   context: z.string().optional().describe('Relevant context for the question, e.g., the student\'s current topic of study.'),
-  educationLevel: z.enum(['1st-10th', 'college', 'undergraduate', 'other']).describe('The education level of the student.'),
+  educationLevel: z.string().describe('The education level of the student.'),
 });
 export type ProvideAITutorAssistanceInput = z.infer<typeof ProvideAITutorAssistanceInputSchema>;
 
@@ -39,8 +39,8 @@ const prompt = ai.definePrompt({
 
   The student's education level is: {{educationLevel}}
 
-  {% if context %}The student has also provided the following context:
-  {{context}}{% endif %}
+  {{#if context}}The student has also provided the following context:
+  {{context}}{{/if}}
 
   Provide a clear and concise answer to the question, and provide a brief explanation if necessary.
   Remember to tailor your answer to the student's education level.

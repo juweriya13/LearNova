@@ -17,7 +17,7 @@ import {
 import { dashboardStats, badges } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { useUser, useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
+import { doc, collection, query, where } from 'firebase/firestore';
 import { BookUser, BrainCircuit, BookOpen } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -42,13 +42,16 @@ export default function DashboardPage() {
   const subjectsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'subjects') : null, [firestore]);
   const { data: subjects, isLoading: subjectsLoading } = useCollection(subjectsQuery);
 
+  const userSubjectsProgressRef = useMemoFirebase(() => user ? collection(firestore, `users/${user.uid}/subjectsProgress`) : null, [user, firestore]);
+  const { data: subjectsProgress, isLoading: subjectsProgressLoading } = useCollection(userSubjectsProgressRef);
+
   const welcomeName = userProfile?.name?.split(' ')[0] || 'Learner';
 
   const stats = [
       { title: 'Qualification', value: userProfile?.qualificationId || 'N/A', icon: BookUser, color: dashboardStats[0].color },
-      { title: 'Points Earned', value: userProgress?.totalScore || 0, icon: dashboardStats[1].icon, color: dashboardStats[1].color },
+      { title: 'Points Earned', value: userProgress?.totalScore ? Math.round(userProgress.totalScore) : 0, icon: dashboardStats[1].icon, color: dashboardStats[1].color },
       { title: 'Quizzes Taken', value: userProgress?.totalQuizzes || 0, icon: dashboardStats[2].icon, color: dashboardStats[2].color },
-      { title: 'Average Score', value: `${userProgress?.averageScore || 0}%`, icon: dashboardStats[3].icon, color: dashboardStats[3].color },
+      { title: 'Average Score', value: `${userProgress?.averageScore ? Math.round(userProgress.averageScore) : 0}%`, icon: dashboardStats[3].icon, color: dashboardStats[3].color },
   ];
 
   return (
@@ -88,18 +91,22 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {subjectsLoading && <p>Loading subjects...</p>}
-            {subjects && subjects.map((subject) => (
-              <div key={subject.name} className="space-y-2">
+            {(subjectsLoading || subjectsProgressLoading) && <p>Loading subjects...</p>}
+            {subjects && subjects.map((subject) => {
+               const progressData = subjectsProgress?.find(p => p.id === subject.id.toLowerCase().replace(/\s/g, '-'));
+               const progress = progressData?.progress || 0;
+
+              return (
+              <div key={subject.id} className="space-y-2">
                 <div className="flex justify-between">
                   <p className="font-medium">{subject.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    {subject.progress}%
+                    {Math.round(progress)}%
                   </p>
                 </div>
-                <Progress value={subject.progress} className="h-2" />
+                <Progress value={progress} className="h-2" />
               </div>
-            ))}
+            )})}
              {!subjectsLoading && (!subjects || subjects.length === 0) && (
                 <p className="text-muted-foreground">No subjects found.</p>
              )}
@@ -152,5 +159,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

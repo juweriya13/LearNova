@@ -9,6 +9,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Bot, Send, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -21,6 +23,12 @@ export default function TutorClient() {
   const [isPending, startTransition] = useTransition();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const userProfileRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}/profile`, user.uid) : null, [user, firestore]);
+  const { data: userProfile } = useDoc(userProfileRef);
+
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
@@ -29,7 +37,7 @@ export default function TutorClient() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || !userProfile?.qualificationId) return;
 
     const userMessage: Message = { role: 'user', content: input };
     setMessages((prev) => [...prev, userMessage]);
@@ -39,7 +47,7 @@ export default function TutorClient() {
       try {
         const response = await provideAITutorAssistance({
           question: input,
-          educationLevel: 'college', // This could be dynamic in a real app
+          educationLevel: userProfile.qualificationId,
         });
         const assistantMessage: Message = {
           role: 'assistant',
@@ -110,7 +118,7 @@ export default function TutorClient() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask me anything about your studies..."
-            disabled={isPending}
+            disabled={isPending || !userProfile?.qualificationId}
             autoComplete="off"
           />
           <Button type="submit" disabled={isPending || !input.trim()} size="icon">

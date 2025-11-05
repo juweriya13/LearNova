@@ -15,7 +15,6 @@ import { errorEmitter } from '../error-emitter';
 /* ---------------------------------------------------------------------------
    📘 Types
 --------------------------------------------------------------------------- */
-
 export type WithId<T> = T & { id: string };
 
 export interface UseCollectionResult<T> {
@@ -32,11 +31,6 @@ interface InternalQuery extends Query<DocumentData> {
 /* ---------------------------------------------------------------------------
    🧠 Main Hook: useCollection
 --------------------------------------------------------------------------- */
-/**
- * React hook to subscribe to a Firestore collection or query in real-time.
- * ✅ Handles permission errors with structured context.
- * ✅ Emits errors globally via `errorEmitter`.
- */
 export function useCollection<T = DocumentData>(
   refOrQuery:
     | ((CollectionReference<DocumentData> | Query<DocumentData>) & { __memo?: boolean })
@@ -48,12 +42,30 @@ export function useCollection<T = DocumentData>(
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
-    // 🛑 Guard clause – if no query reference, reset and stop
+    // 🛑 Guard clause – stop if query is null/undefined
     if (!refOrQuery) {
       setData(null);
       setIsLoading(false);
       setError(null);
       return;
+    }
+
+    // 🛡️ Detect invalid or root-level paths
+    let path = 'unknown';
+    try {
+      path =
+        refOrQuery.type === 'collection'
+          ? (refOrQuery as CollectionReference).path
+          : (refOrQuery as unknown as InternalQuery)._query.path.canonicalString();
+
+      if (!path || path.trim() === '/' || path.trim() === '') {
+        console.warn('🚫 useCollection called with invalid Firestore path "/" — skipping subscription.');
+        setError(new Error('Invalid Firestore reference (root-level access denied).'));
+        setIsLoading(false);
+        return;
+      }
+    } catch (e) {
+      console.warn('⚠️ Failed to extract Firestore path:', e);
     }
 
     setIsLoading(true);
@@ -66,22 +78,12 @@ export function useCollection<T = DocumentData>(
           ...(doc.data() as T),
           id: doc.id,
         }));
-
         setData(results);
         setError(null);
         setIsLoading(false);
       },
       (firestoreError: FirestoreError) => {
-        // ⚠️ Firestore permission or path errors
-        let path = 'unknown';
-        try {
-          path =
-            refOrQuery.type === 'collection'
-              ? (refOrQuery as CollectionReference).path
-              : (refOrQuery as unknown as InternalQuery)._query.path.canonicalString();
-        } catch {
-          // silently fail if path extraction fails
-        }
+        console.log('🚨 Firestore attempted path:', path);
 
         const contextualError = new FirestorePermissionError({
           operation: 'list',

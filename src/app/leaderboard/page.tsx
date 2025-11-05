@@ -9,25 +9,7 @@ import { Trophy } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { collectionGroup, limit, orderBy, query, type Query, type DocumentData } from 'firebase/firestore';
-import { getApp, getApps, initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
-
-import { useCollection } from '@/firebase/firestore/use-collection'; // ✅ direct import of the hook (no barrel)
-
-// If you already have a config file, import from there instead:
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
-};
-
-function getDb() {
-  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-  return getFirestore(app);
-}
+import { useCollection, useFirestore } from '@/firebase';
 
 interface LeaderboardEntry {
   id: string;
@@ -39,17 +21,19 @@ const getRankColor = (rank: number) =>
   rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-gray-400' : rank === 3 ? 'text-orange-400' : 'text-foreground';
 
 export default function LeaderboardPage() {
+  const firestore = useFirestore();
   const [qRef, setQRef] = useState<Query<LeaderboardEntry> | null>(null);
 
   useEffect(() => {
-    const db = getDb();
-    const q = query(
-      collectionGroup(db, 'leaderboard'),
-      orderBy('totalScore', 'desc'),
-      limit(10)
-    ) as unknown as Query<LeaderboardEntry>;
-    setQRef(q);
-  }, []);
+    if (firestore) {
+        const q = query(
+          collectionGroup(firestore, 'leaderboard'),
+          orderBy('totalScore', 'desc'),
+          limit(10)
+        ) as unknown as Query<LeaderboardEntry>;
+        setQRef(q);
+    }
+  }, [firestore]);
 
   const { data: leaderboardData, isLoading, error } =
     useCollection<LeaderboardEntry>(qRef as unknown as Query<DocumentData>);

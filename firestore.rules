@@ -1,116 +1,39 @@
-/**
- * @file Firestore Security Rules for AI-Driven Personalized Learning Platform (LearnVerse AI).
- *
- * @Core Philosophy:
- * This ruleset enforces a strict user-ownership model for private user data (profile, progress, recommendations, chats).
- * Qualifications and Leaderboard entries are segregated by qualification ID for controlled access and querying.
- *
- * @Data Structure:
- * - /users/{userId}/profile/{docId}: User profile information, owned by the user.
- * - /users/{userId}/progress/{docId}: User progress data, owned by the user.
- * - /users/{userId}/badges/{badgeId}: User badges, owned by the user.
- * - /users/{userId}/recommendations/{recommendationId}: AI recommendations for the user, owned by the user.
- * - /users/{userId}/chats/{chatMessageId}: Chat logs for the user, owned by the user.
- * - /qualifications/{qualificationId}: Qualification levels (e.g., 1st Grade, College). Write access restricted.
- * - /quizzes/{qualificationId}/{difficulty}/{quizId}: Quiz questions, grouped by qualification and difficulty.
- * - /leaderboard/{qualificationId}/{leaderboardEntryId}: Leaderboard entries, grouped by qualification.
- * - /subjects/{subjectId}: List of available subjects. Read-only for clients.
- *
- * @Key Security Decisions:
- * - User data is strictly controlled via path-based ownership.
- * - Qualifications and Leaderboard Entries write access is only for authorized users.
- * - Read operations are generally open unless data is private.
- * - Listing user-owned subcollections is allowed for the owner.
- *
- * @Denormalization for Authorization:
- * - The `quizzes` subcollection denormalizes `qualificationId`, so rules can validate the user's qualification without needing to read the qualification document itself.
- * - The `leaderboard` subcollection denormalizes `qualificationId` for efficient querying and authorization independence.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+    // User-specific data
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    match /users/{userId}/{collection}/{docId} {
-      allow read, write: if isOwner(userId);
-    }
-
-    match /users/{userId}/badges/{badgeId} {
-      allow read, write: if isOwner(userId);
-    }
-    
-    match /users/{userId}/recommendations/{recommendationId} {
-       allow read, write: if isOwner(userId);
-    }
-
-    match /users/{userId}/chats/{chatMessageId} {
-      allow read, write: if isOwner(userId);
-    }
-
-    /**
-     * @description Secure qualifications under /qualifications/{qualificationId}.  Write access is only for authorized users.
-     * @path /qualifications/{qualificationId}
-     * @allow get Anyone can read qualifications.
-     * @deny create, update, delete: Only authorized users (e.g., admins) can create, update, or delete qualifications.
-     * @principle Restricts write access to a limited set of users.
-     */
-    match /qualifications/{qualificationId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if request.auth != null;
-      allow update: if false; // TODO: Add admin role check
-      allow delete: if false; // TODO: Add admin role check
-    }
-
-    /**
-     * @description Secure quizzes under /quizzes/{qualificationId}/{difficulty}/{quizId}.  Anyone can read quizzes.
-     * @path /quizzes/{qualificationId}/{difficulty}/{quizId}
-     * @allow get: Anyone can read quizzes.
-     * @deny create, update, delete: Only authorized users (e.g., admins) can create, update, or delete quizzes.
-     * @principle Restricts write access to a limited set of users.
-     */
+    // Public quiz data (read-only for anonymous, write for authenticated)
     match /quizzes/{qualificationId}/{difficulty}/{quizId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if false; // TODO: Add admin role check
-      allow update: if false; // TODO: Add admin role check
-      allow delete: if false; // TODO: Add admin role check
+      allow read: if true;
+      allow write: if request.auth != null;
     }
 
-    /**
-     * @description Secure leaderboard entries under /leaderboard/{qualificationId}/{leaderboardEntryId}.  Anyone can read the leaderboard.
-     * @path /leaderboard/{qualificationId}/{leaderboardEntryId}
-     * @allow get: Anyone can read leaderboard entries.
-     * @deny create, update, delete: Only authorized users (e.g., the backend) can create, update, or delete leaderboard entries.
-     * @principle Restricts write access to a limited set of users (the backend).
-     */
+    // Leaderboard data (read all, write by authenticated)
     match /leaderboard/{qualificationId}/{leaderboardEntryId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if false; // TODO: Add backend service account check
-      allow update: if false; // TODO: Add backend service account check
-      allow delete: if false; // TODO: Add backend service account check
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Recommendations (user-specific)
+    match /users/{userId}/recommendations/{recommendationId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    /**
-     * @description Secure subjects under /subjects/{subjectId}.  Anyone can read subjects.
-     * @path /subjects/{subjectId}
-     * @allow get: Anyone can read subjects.
-     * @allow list: Anyone can read subjects.
-     * @deny create, update, delete: Only authorized users (e.g., admins) can create, update, or delete subjects.
-     * @principle Restricts write access to a limited set of users.
-     */
+    // Subjects (read all, write by authenticated)
     match /subjects/{subjectId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if false; // TODO: Add admin role check
-      allow update: if false; // TODO: Add admin role check
-      allow delete: if false; // TODO: Add admin role check
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Qualifications (read all, write by authenticated)
+     match /qualifications/{qualificationId} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
   }
 }
-
-    

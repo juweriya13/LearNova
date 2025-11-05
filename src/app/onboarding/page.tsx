@@ -32,7 +32,7 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Check if user profile already exists
-  const userProfileRef = user ? doc(firestore, `users/${user.uid}/profile`, 'data') : null;
+  const userProfileRef = user ? doc(firestore, `users/${user.uid}/profile`, user.uid) : null;
   const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
 
   useEffect(() => {
@@ -58,26 +58,23 @@ export default function OnboardingPage() {
       return;
     }
     setError(null);
-    try {
-      const userDocRef = doc(firestore, `users/${user.uid}/profile`, 'data');
-      await setDocumentNonBlocking(userDocRef, {
-        id: user.uid,
-        name: user.displayName || 'Anonymous User',
-        email: user.email,
-        qualificationId: qualification,
-      }, { merge: true });
+    
+    const userDocRef = doc(firestore, `users/${user.uid}/profile`, user.uid);
+    setDocumentNonBlocking(userDocRef, {
+      id: user.uid,
+      name: user.displayName || 'Anonymous User',
+      email: user.email,
+      qualificationId: qualification,
+    }, { merge: true });
 
-      // also save qualification to a separate collection
-      const qualificationDocRef = doc(firestore, 'qualifications', qualification);
-      await setDocumentNonBlocking(qualificationDocRef, {
-        id: qualification,
-        level: qualification,
-      }, { merge: true });
+    // also save qualification to a separate collection
+    const qualificationDocRef = doc(firestore, 'qualifications', qualification);
+    setDocumentNonBlocking(qualificationDocRef, {
+      id: qualification,
+      level: qualification,
+    }, { merge: true });
 
-      router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message);
-    }
+    router.push('/dashboard');
   };
 
   if (isUserLoading || isProfileLoading) {

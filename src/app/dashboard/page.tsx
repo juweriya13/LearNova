@@ -23,10 +23,10 @@ export default function DashboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  const userProfileRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}/profile`, 'data') : null, [user, firestore]);
+  const userProfileRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}/profile`, user.uid) : null, [user, firestore]);
   const { data: userProfile } = useDoc(userProfileRef);
 
-  const userProgressRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}/progress`, 'data') : null, [user, firestore]);
+  const userProgressRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}/progress`, user.uid) : null, [user, firestore]);
   const { data: userProgress } = useDoc(userProgressRef);
 
   const userBadgesRef = useMemoFirebase(() => user ? collection(firestore, `users/${user.uid}/badges`) : null, [user, firestore]);

@@ -18,9 +18,10 @@ import { Logo } from '@/components/icons';
 import { navLinks } from '@/lib/data';
 import { Header } from '@/components/Header';
 import { LogOut, Settings } from 'lucide-react';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useEffect } from 'react';
+import { doc } from 'firebase/firestore';
 
 export default function DashboardLayout({
   children,
@@ -31,25 +32,47 @@ export default function DashboardLayout({
   const router = useRouter();
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+
+  const userProfileRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}/profile`, user.uid) : null, [user, firestore]);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
 
   useEffect(() => {
-    if (!isUserLoading && !user) {
+    const isAuthPage = pathname === '/login' || pathname === '/signup';
+    if (!isUserLoading && !user && !isAuthPage) {
       router.push('/login');
     }
-  }, [user, isUserLoading, router]);
 
-  if (isUserLoading || !user) {
+    if (!isUserLoading && user && !isProfileLoading && !userProfile?.qualificationId) {
+        if (pathname !== '/onboarding') {
+            router.push('/onboarding');
+        }
+    }
+  }, [user, isUserLoading, router, userProfile, isProfileLoading, pathname]);
+
+  const handleLogout = async () => {
+    if (auth) {
+        await signOut(auth);
+        router.push('/login');
+    }
+  };
+  
+  if (isUserLoading || !user || isProfileLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p>Loading...</p>
       </div>
     );
   }
-
-  const handleLogout = async () => {
-    await signOut(auth);
-    router.push('/login');
-  };
+  
+  if (!userProfile?.qualificationId) {
+    // We are redirecting, show a loading state
+     return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p>Redirecting to onboarding...</p>
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>

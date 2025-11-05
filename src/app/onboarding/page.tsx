@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useAuth, useUser, useFirestore, setDocumentNonBlocking, useDoc } from '@/firebase';
+import { useAuth, useUser, useFirestore, setDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import React, { useEffect, useState } from 'react';
 import { doc } from 'firebase/firestore';
 import { qualificationLevels } from '@/lib/data';
@@ -32,7 +32,7 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Check if user profile already exists
-  const userProfileRef = user ? doc(firestore, `users/${user.uid}/profile`, user.uid) : null;
+  const userProfileRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}/profile`, user.uid) : null, [user, firestore]);
   const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export default function OnboardingPage() {
       router.push('/login');
     }
     // If profile is not loading and it already exists, they have onboarded.
-    if (!isProfileLoading && userProfile) {
+    if (!isProfileLoading && userProfile?.qualificationId) {
         router.push('/dashboard');
     }
   }, [user, isUserLoading, userProfile, isProfileLoading, router]);
@@ -87,7 +87,7 @@ export default function OnboardingPage() {
   }
 
   // If user profile is loaded and exists, we wait for useEffect to redirect.
-  if (userProfile) {
+  if (userProfile?.qualificationId) {
      return <div className="flex min-h-screen items-center justify-center"><p>Redirecting...</p></div>;
   }
 

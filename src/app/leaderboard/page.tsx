@@ -35,8 +35,9 @@ export default function LeaderboardPage() {
   
   const leaderboardQuery = useMemoFirebase(() => {
     if (!firestore) return null;
+    // Cast firestore to Firestore to satisfy collectionGroup's type requirement
     return query(
-      collectionGroup(firestore, 'leaderboard'),
+      collectionGroup(firestore as Firestore, 'leaderboard'),
       orderBy('totalScore', 'desc'),
       limit(10)
     );

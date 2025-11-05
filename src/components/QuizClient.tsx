@@ -1,19 +1,19 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { generateQuizQuestions } from '@/ai/flows/generate-quiz-questions';
 import type { GenerateQuizQuestionsOutput } from '@/ai/flows/generate-quiz-questions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { educationLevels } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle, XCircle, ArrowRight, RotateCw } from 'lucide-react';
 import { Progress } from './ui/progress';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 type QuizState = 'setup' | 'loading' | 'active' | 'result';
 type Question = GenerateQuizQuestionsOutput['questions'][0];
@@ -21,7 +21,6 @@ type Question = GenerateQuizQuestionsOutput['questions'][0];
 export default function QuizClient() {
   const [quizState, setQuizState] = useState<QuizState>('setup');
   const [topic, setTopic] = useState('Basic Algebra');
-  const [educationLevel, setEducationLevel] = useState(educationLevels[0]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -29,7 +28,27 @@ export default function QuizClient() {
   const [score, setScore] = useState(0);
   const [isPending, startTransition] = useTransition();
 
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const userProfileRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}/profile`, user.uid) : null, [user, firestore]);
+  const { data: userProfile } = useDoc(userProfileRef);
+
+  const [educationLevel, setEducationLevel] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (userProfile?.qualificationId) {
+      setEducationLevel(userProfile.qualificationId);
+    }
+  }, [userProfile]);
+
+
   const handleStartQuiz = () => {
+    if (!educationLevel) {
+        // Optionally, handle the case where education level is not yet available
+        console.error("Education level not set.");
+        return;
+    }
     startTransition(async () => {
       setQuizState('loading');
       try {
@@ -106,18 +125,11 @@ export default function QuizClient() {
           </div>
           <div>
             <Label htmlFor="educationLevel">Education Level</Label>
-            <Select value={educationLevel} onValueChange={setEducationLevel}>
-              <SelectTrigger id="educationLevel">
-                <SelectValue placeholder="Select level" />
-              </SelectTrigger>
-              <SelectContent>
-                {educationLevels.map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <Input id="educationLevel" value={educationLevel || 'Loading...'} disabled />
           </div>
         </CardContent>
         <CardFooter>
-          <Button onClick={handleStartQuiz} disabled={isPending || !topic}>
+          <Button onClick={handleStartQuiz} disabled={isPending || !topic || !educationLevel}>
             {isPending ? 'Generating...' : 'Start Quiz'}
           </Button>
         </CardFooter>

@@ -18,6 +18,7 @@ import { dashboardStats, subjects, badges } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { useUser, useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
+import { BookUser } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user } = useUser();
@@ -35,6 +36,7 @@ export default function DashboardPage() {
   const welcomeName = userProfile?.name?.split(' ')[0] || 'Learner';
 
   const stats = [
+      { title: 'Qualification', value: userProfile?.qualificationId || 'N/A', icon: BookUser, color: dashboardStats[0].color },
       { title: 'Points Earned', value: userProgress?.totalScore || 0, icon: dashboardStats[1].icon, color: dashboardStats[1].color },
       { title: 'Quizzes Taken', value: userProgress?.totalQuizzes || 0, icon: dashboardStats[2].icon, color: dashboardStats[2].color },
       { title: 'Average Score', value: `${userProgress?.averageScore || 0}%`, icon: dashboardStats[3].icon, color: dashboardStats[3].color },
@@ -52,7 +54,7 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.title} className="shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -62,7 +64,7 @@ export default function DashboardPage() {
               <stat.icon className={cn('h-4 w-4 text-muted-foreground', stat.color)} />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
+              <div className="text-2xl font-bold truncate">{stat.value}</div>
             </CardContent>
           </Card>
         ))}

@@ -34,14 +34,17 @@ export default function LeaderboardPage() {
   const firestore = useFirestore();
   
   const leaderboardQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    // Only construct the query if the firestore instance is available.
+    if (!firestore) {
+      return null;
+    }
     // Cast firestore to Firestore to satisfy collectionGroup's type requirement
     return query(
       collectionGroup(firestore as Firestore, 'leaderboard'),
       orderBy('totalScore', 'desc'),
       limit(10)
     );
-  }, [firestore]);
+  }, [firestore]); // The dependency array ensures this only re-runs when firestore changes.
   
   const { data: leaderboardData, isLoading } = useCollection<LeaderboardEntry>(leaderboardQuery);
 

@@ -16,6 +16,8 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Home, Pencil } from 'lucide-react';
 import Link from 'next/link';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { qualificationLevels } from '@/lib/data';
 
 export default function ProfilePage() {
   const { user } = useUser();
@@ -26,27 +28,32 @@ export default function ProfilePage() {
     () => (user ? doc(firestore, `users/${user.uid}`) : null),
     [user, firestore]
   );
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
+  const { data: userProfile, isLoading: isProfileLoading, error: profileError } = useDoc(userProfileRef);
 
   const [name, setName] = useState('');
+  const [qualification, setQualification] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (userProfile?.name) {
-      setName(userProfile.name);
+    if (userProfile) {
+      setName(userProfile.name || '');
+      setQualification(userProfile.qualificationId || '');
     }
   }, [userProfile]);
 
   const handleUpdateProfile = async () => {
-    if (!user || !name || !firestore) return;
+    if (!user || !firestore || (!name && !qualification)) return;
     setIsSaving(true);
     const userDocRef = doc(firestore, 'users', user.uid);
     try {
-        await updateDoc(userDocRef, { name: name });
+        await updateDoc(userDocRef, { 
+            name: name,
+            qualificationId: qualification 
+        });
         toast({
             title: 'Profile Updated',
-            description: 'Your name has been successfully updated.',
+            description: 'Your profile has been successfully updated.',
         });
         setIsEditing(false);
     } catch (error) {
@@ -62,8 +69,9 @@ export default function ProfilePage() {
   };
   
   const handleCancel = () => {
-    if(userProfile?.name){
-        setName(userProfile.name);
+    if(userProfile){
+        setName(userProfile.name || '');
+        setQualification(userProfile.qualificationId || '');
     }
     setIsEditing(false);
   }
@@ -85,7 +93,9 @@ export default function ProfilePage() {
       <CardContent className="space-y-6">
         {isProfileLoading ? (
             <p>Loading profile...</p>
-        ) : (
+        ) : profileError ? (
+            <p className="text-destructive">Error loading profile.</p>
+        ): (
             <>
                 <div className="space-y-2">
                     <Label htmlFor="name">Name</Label>
@@ -107,11 +117,18 @@ export default function ProfilePage() {
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="qualification">Qualification</Label>
-                    <Input
-                    id="qualification"
-                    value={userProfile?.qualificationId || ''}
-                    disabled
-                    />
+                     <Select onValueChange={setQualification} value={qualification} disabled={!isEditing}>
+                        <SelectTrigger id="qualification">
+                            <SelectValue placeholder="Select your qualification" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        {qualificationLevels.map((level) => (
+                            <SelectItem key={level} value={level}>
+                            {level}
+                            </SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
                 </div>
                 {isEditing && (
                     <div className="flex space-x-2">

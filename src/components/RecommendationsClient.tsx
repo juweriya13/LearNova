@@ -1,42 +1,54 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { recommendNextTopics } from '@/ai/flows/recommend-next-topics';
 import type { RecommendNextTopicsOutput } from '@/ai/flows/recommend-next-topics';
-import { educationLevels } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Skeleton } from './ui/skeleton';
 import { Lightbulb, Sparkles } from 'lucide-react';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 const formSchema = z.object({
   quizPerformance: z.string().min(10, 'Please provide more details about your performance.'),
-  educationLevel: z.string({ required_error: 'Please select an education level.' }),
 });
 
 export default function RecommendationsClient() {
   const [recommendation, setRecommendation] = useState<RecommendNextTopicsOutput | null>(null);
   const [isPending, startTransition] = useTransition();
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const userProfileRef = useMemoFirebase(() => (user ? doc(firestore, `users/${user.uid}`) : null), [user, firestore]);
+  const { data: userProfile } = useDoc(userProfileRef);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       quizPerformance: 'I took a quiz on "Basic Algebra" and scored 60%. I struggled with word problems involving equations.',
-      educationLevel: educationLevels[0],
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!userProfile?.qualificationId) {
+      // Optionally handle case where qualification is not available
+      console.error("User qualification not found.");
+      return;
+    }
+
     startTransition(async () => {
       setRecommendation(null);
       try {
-        const result = await recommendNextTopics(values);
+        const result = await recommendNextTopics({
+            ...values,
+            educationLevel: userProfile.qualificationId
+        });
         setRecommendation(result);
       } catch (error) {
         console.error('Failed to get recommendations:', error);
@@ -49,9 +61,9 @@ export default function RecommendationsClient() {
     <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle>What&apos;s Next?</CardTitle>
+          <CardTitle>What's Next?</CardTitle>
           <CardDescription>
-            Tell us about your recent performance, and our AI will suggest what to learn next.
+            Tell us about your recent performance, and our AI will suggest what to learn next. Your recommendations are based on your qualification level: <span className="font-semibold">{userProfile?.qualificationId || 'Loading...'}</span>
           </CardDescription>
         </CardHeader>
         <Form {...form}>
@@ -74,33 +86,9 @@ export default function RecommendationsClient() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="educationLevel"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Education Level</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select your education level" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {educationLevels.map((level) => (
-                          <SelectItem key={level} value={level}>
-                            {level}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </CardContent>
             <CardFooter>
-              <Button type="submit" disabled={isPending}>
+              <Button type="submit" disabled={isPending || !userProfile?.qualificationId}>
                 {isPending ? 'Analyzing...' : 'Get Recommendations'}
               </Button>
             </CardFooter>

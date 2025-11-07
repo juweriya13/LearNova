@@ -22,6 +22,10 @@
         "qualificationId": {
           "type": "string",
           "description": "Reference to Qualification. (Relationship: User 1:1 Qualification)"
+        },
+        "age": {
+          "type": "number",
+          "description": "User's age."
         }
       },
       "required": [

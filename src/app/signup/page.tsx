@@ -85,10 +85,9 @@ export default function SignupPage() {
     }
     try {
       const provider = new GoogleAuthProvider();
-      // For Google Sign-In, we will still need the onboarding step as we can't collect qualification upfront.
       await signInWithPopup(auth, provider);
-       // After Google signin, they still need to pick qualification
-      router.push('/onboarding');
+      // After Google signin, they need to be treated as a new user who needs a profile
+      router.push('/dashboard');
     } catch (err: any) {
       setError(err.message);
     }

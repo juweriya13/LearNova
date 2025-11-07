@@ -34,7 +34,7 @@ export default function DashboardLayout({
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
-  const userProfileRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}`) : null, [user, firestore]);
+  const userProfileRef = useMemoFirebase(() => (user ? doc(firestore, `users/${user.uid}`) : null), [user, firestore]);
   const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
 
   useEffect(() => {
@@ -42,14 +42,7 @@ export default function DashboardLayout({
     if (!isUserLoading && !user && !isAuthPage) {
       router.push('/login');
     }
-    
-    // With onboarding removed, we check for profile on Google Sign-In
-    // and redirect to a simplified onboarding if needed.
-    if (user && !isUserLoading && !isProfileLoading && !userProfile?.qualificationId && auth?.currentUser?.providerData[0].providerId === 'google.com' ) {
-        router.push('/onboarding');
-    }
-
-  }, [user, isUserLoading, router, userProfile, isProfileLoading, pathname, auth]);
+  }, [user, isUserLoading, router, pathname, auth]);
 
   const handleLogout = async () => {
     if (auth) {

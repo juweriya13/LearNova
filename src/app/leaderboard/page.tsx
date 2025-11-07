@@ -6,10 +6,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Trophy } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 
 import { collectionGroup, limit, orderBy, query, type Query, type DocumentData } from 'firebase/firestore';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 
 interface LeaderboardEntry {
   id: string;
@@ -22,21 +22,19 @@ const getRankColor = (rank: number) =>
 
 export default function LeaderboardPage() {
   const firestore = useFirestore();
-  const [qRef, setQRef] = useState<Query<LeaderboardEntry> | null>(null);
-
-  useEffect(() => {
-    if (firestore) {
-        const q = query(
-          collectionGroup(firestore, 'leaderboard'),
-          orderBy('totalScore', 'desc'),
-          limit(10)
-        ) as unknown as Query<LeaderboardEntry>;
-        setQRef(q);
-    }
+  
+  const leaderboardQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+        collectionGroup(firestore, 'leaderboard'),
+        orderBy('totalScore', 'desc'),
+        limit(10)
+      ) as unknown as Query<LeaderboardEntry>;
   }, [firestore]);
 
+
   const { data: leaderboardData, isLoading, error } =
-    useCollection<LeaderboardEntry>(qRef as unknown as Query<DocumentData>);
+    useCollection<LeaderboardEntry>(leaderboardQuery as unknown as Query<DocumentData>);
 
   return (
     <Card className="shadow-lg">

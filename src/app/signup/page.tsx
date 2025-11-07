@@ -13,37 +13,65 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/icons';
 import { useRouter } from 'next/navigation';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useFirestore } from '@/firebase';
 import React, { useEffect, useState } from 'react';
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile } from 'firebase/auth';
 import { Home } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { qualificationLevels } from '@/lib/data';
+import { doc, setDoc } from 'firebase/firestore';
 
 export default function SignupPage() {
   const router = useRouter();
   const auth = useAuth();
+  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [qualification, setQualification] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isUserLoading && user) {
-      router.push('/onboarding');
+      // If user is logged in, they should have a profile, go to dashboard
+      router.push('/dashboard');
     }
   }, [user, isUserLoading, router]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!auth) {
+    if (!auth || !firestore) {
         setError("Auth service not available");
+        return;
+    }
+    if (!qualification) {
+        setError("Please select a qualification.");
         return;
     }
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName: name });
-      // The useEffect will catch the user creation and redirect to onboarding
+      
+      // Store user profile in Firestore
+      const userDocRef = doc(firestore, 'users', userCredential.user.uid);
+      await setDoc(userDocRef, {
+        id: userCredential.user.uid,
+        name: name,
+        email: userCredential.user.email,
+        qualificationId: qualification,
+      });
+
+      // The useEffect will catch the user creation and redirect to dashboard
+      router.push('/dashboard');
+
     } catch (err: any) {
       setError(err.message);
     }
@@ -57,8 +85,10 @@ export default function SignupPage() {
     }
     try {
       const provider = new GoogleAuthProvider();
+      // For Google Sign-In, we will still need the onboarding step as we can't collect qualification upfront.
       await signInWithPopup(auth, provider);
-       // The useEffect will catch the user creation and redirect to onboarding
+       // After Google signin, they still need to pick qualification
+      router.push('/onboarding');
     } catch (err: any) {
       setError(err.message);
     }
@@ -115,7 +145,22 @@ export default function SignupPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <Button type="submit" className="w-full">
+             <div className="space-y-2">
+              <Label htmlFor="qualification">Qualification</Label>
+              <Select onValueChange={setQualification} value={qualification}>
+                <SelectTrigger id="qualification">
+                  <SelectValue placeholder="Select your qualification" />
+                </SelectTrigger>
+                <SelectContent>
+                  {qualificationLevels.map((level) => (
+                    <SelectItem key={level} value={level}>
+                      {level}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="submit" className="w-full" disabled={!name || !email || !password || !qualification}>
               Sign Up
             </Button>
             <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} type="button">

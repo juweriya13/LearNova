@@ -42,11 +42,14 @@ export default function DashboardLayout({
     if (!isUserLoading && !user && !isAuthPage) {
       router.push('/login');
     }
-
-    if (user && !isProfileLoading && !userProfile?.qualificationId && pathname !== '/onboarding') {
+    
+    // With onboarding removed, we check for profile on Google Sign-In
+    // and redirect to a simplified onboarding if needed.
+    if (user && !isUserLoading && !isProfileLoading && !userProfile?.qualificationId && auth?.currentUser?.providerData[0].providerId === 'google.com' ) {
         router.push('/onboarding');
     }
-  }, [user, isUserLoading, router, userProfile, isProfileLoading, pathname]);
+
+  }, [user, isUserLoading, router, userProfile, isProfileLoading, pathname, auth]);
 
   const handleLogout = async () => {
     if (auth) {
@@ -55,7 +58,7 @@ export default function DashboardLayout({
     }
   };
   
-  if (isUserLoading || !user || isProfileLoading) {
+  if (isUserLoading || !user || (isProfileLoading && user)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p>Loading...</p>
@@ -63,15 +66,6 @@ export default function DashboardLayout({
     );
   }
   
-  if (!userProfile?.qualificationId && pathname !== '/onboarding') {
-    // We are redirecting, show a loading state
-     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p>Redirecting to onboarding...</p>
-      </div>
-    );
-  }
-
   return (
     <SidebarProvider>
       <Sidebar>

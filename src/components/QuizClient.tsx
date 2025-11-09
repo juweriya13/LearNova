@@ -13,7 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle, XCircle, ArrowRight, RotateCw } from 'lucide-react';
 import { Progress } from './ui/progress';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, collection, writeBatch, serverTimestamp, runTransaction, getDoc, addDoc } from 'firebase/firestore';
+import { doc, collection, writeBatch, serverTimestamp, runTransaction, getDoc, addDoc, getDocs, query, where } from 'firebase/firestore';
 
 type QuizState = 'setup' | 'loading' | 'active' | 'result';
 type Question = GenerateQuizQuestionsOutput['questions'][0];
@@ -113,6 +113,20 @@ export default function QuizClient() {
         percentage: percentage,
         timestamp: serverTimestamp()
     });
+
+    // Check for and award badges
+    if (percentage === 100) {
+        const badgesRef = collection(firestore, `users/${user.uid}/badges`);
+        const q = query(badgesRef, where("badgeName", "==", "Perfect Score"));
+        const existingBadges = await getDocs(q);
+
+        if(existingBadges.empty) {
+            await addDoc(badgesRef, {
+                badgeName: 'Perfect Score',
+                earnedDate: serverTimestamp()
+            });
+        }
+    }
 
     const progressRef = doc(firestore, `users/${user.uid}/progress`, user.uid);
     const subjectProgressRef = doc(firestore, `users/${user.uid}/subjectsProgress`, topic.toLowerCase().replace(/\s/g, '-'));

@@ -5,10 +5,9 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { Gamepad2, Brain, Timer, Check, Star, Repeat } from 'lucide-react';
+import { Gamepad2, Brain, Timer, Check, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { gameIcons } from '@/lib/data';
+import { gameIcons, qualificationLevels } from '@/lib/data';
 import { isToday } from 'date-fns';
 
 type CardData = {
@@ -19,10 +18,30 @@ type CardData = {
 };
 
 type GameState = 'setup' | 'playing' | 'finished' | 'played';
+type Difficulty = 'Easy' | 'Medium' | 'Hard';
 
-const generateCards = (): CardData[] => {
-  const icons = [...gameIcons, ...gameIcons];
-  const shuffledIcons = icons.sort(() => Math.random() - 0.5);
+const getDifficulty = (qualificationId?: string): Difficulty => {
+    if (!qualificationId) return 'Medium';
+    const index = qualificationLevels.indexOf(qualificationId);
+    if (index < 5) return 'Easy'; // Grades 1-5
+    if (index < 10) return 'Medium'; // Grades 6-10
+    return 'Hard'; // College, University, Other
+};
+
+const getGridConfig = (difficulty: Difficulty) => {
+    switch (difficulty) {
+        case 'Easy': return { pairs: 6, gridCols: 'grid-cols-4' }; // 4x3 grid
+        case 'Medium': return { pairs: 8, gridCols: 'grid-cols-4' }; // 4x4 grid
+        case 'Hard': return { pairs: 10, gridCols: 'grid-cols-5' }; // 5x4 grid
+        default: return { pairs: 8, gridCols: 'grid-cols-4' };
+    }
+}
+
+const generateCards = (difficulty: Difficulty): CardData[] => {
+  const { pairs } = getGridConfig(difficulty);
+  const icons = gameIcons.slice(0, pairs);
+  const allIcons = [...icons, ...icons];
+  const shuffledIcons = allIcons.sort(() => Math.random() - 0.5);
   return shuffledIcons.map((icon, index) => ({
     id: index,
     icon,
@@ -38,11 +57,17 @@ export default function BrainGame() {
   const [moves, setMoves] = useState(0);
   const [timer, setTimer] = useState(0);
   const [score, setScore] = useState(0);
-
+  
   const { user } = useUser();
   const firestore = useFirestore();
+
+  const userProfileRef = useMemoFirebase(() => (user ? doc(firestore, `users/${user.uid}`) : null), [user, firestore]);
+  const { data: userProfile } = useDoc(userProfileRef);
+  
   const gameAttemptRef = useMemoFirebase(() => (user ? doc(firestore, `users/${user.uid}/dailyGames/brainGame`) : null), [user, firestore]);
   const { data: gameAttempt, isLoading: isAttemptLoading } = useDoc(gameAttemptRef);
+
+  const difficulty = useMemo(() => getDifficulty(userProfile?.qualificationId), [userProfile]);
 
   useEffect(() => {
     if (isAttemptLoading) return;
@@ -144,13 +169,15 @@ export default function BrainGame() {
   };
 
   const startGame = () => {
-    setCards(generateCards());
+    setCards(generateCards(difficulty));
     setMoves(0);
     setTimer(0);
     setScore(0);
     setFlippedCards([]);
     setGameState('playing');
   };
+
+  const { gridCols } = getGridConfig(difficulty);
 
   if (isAttemptLoading) {
       return <div className="flex items-center justify-center h-full"><p>Loading Game...</p></div>
@@ -179,7 +206,7 @@ export default function BrainGame() {
           <CardHeader>
             <div className="flex justify-center mb-4 text-primary"><Brain size={48} /></div>
             <CardTitle>Memory Brain Game</CardTitle>
-            <CardDescription>Match the pairs of cards as quickly as you can. You can only play once a day!</CardDescription>
+            <CardDescription>Match the pairs of cards as quickly as you can. You can only play once a day! Your difficulty is set to <span className="font-bold">{difficulty}</span>.</CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={startGame} size="lg">
@@ -223,7 +250,7 @@ export default function BrainGame() {
             <div className="flex items-center gap-2">Moves: {moves}</div>
         </div>
       </div>
-      <div className="grid grid-cols-4 gap-4">
+      <div className={cn("grid gap-4", gridCols)}>
         {cards.map((card, index) => (
           <div key={index} className="aspect-square" onClick={() => handleCardClick(index)}>
             <div

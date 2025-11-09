@@ -73,5 +73,5 @@ export const publicNavLinks = [
 ];
 
 export const gameIcons = [
-  'Cat', 'Dog', 'Rabbit', 'Bear', 'Fox', 'Panda', 'Koala', 'Lion'
+  'Cat', 'Dog', 'Rabbit', 'Bear', 'Fox', 'Panda', 'Koala', 'Lion', 'Tiger', 'Penguin'
 ];

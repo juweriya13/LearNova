@@ -63,8 +63,6 @@ export const qualificationLevels = [
   '7th Grade', '8th Grade', '9th Grade', '10th Grade', 'College', 'University', 'Other'
 ];
 
-export const educationLevels = qualificationLevels;
-
 export const publicNavLinks = [
   { href: '/login', label: 'Login', icon: LogIn },
   { href: '/signup', label: 'Sign Up', icon: LogIn },

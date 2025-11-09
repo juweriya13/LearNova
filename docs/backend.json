@@ -4,7 +4,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user within the LearnVerse AI platform.",
+      "description": "Represents a user within the LearNova platform.",
       "properties": {
         "id": {
           "type": "string",
@@ -59,7 +59,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Quiz",
       "type": "object",
-      "description": "Represents a quiz within the LearnVerse AI platform.",
+      "description": "Represents a quiz within the LearNova platform.",
       "properties": {
         "id": {
           "type": "string",
@@ -130,7 +130,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "UserProgress",
       "type": "object",
-      "description": "Represents the progress of a user in the LearnVerse AI platform.",
+      "description": "Represents the progress of a user in the LearNova platform.",
       "properties": {
         "id": {
           "type": "string",

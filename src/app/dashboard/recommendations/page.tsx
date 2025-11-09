@@ -1,7 +1,7 @@
 import RecommendationsClient from '@/components/RecommendationsClient';
 
 export const metadata = {
-  title: 'AI Recommendations | LearnVerse AI',
+  title: 'AI Recommendations | LearNova',
   description: 'Get AI-powered recommendations on what to learn next.',
 };
 

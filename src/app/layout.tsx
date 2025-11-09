@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'LearnVerse AI',
+  title: 'LearNova',
   description: 'Your personalized AI-powered learning companion.',
 };
 

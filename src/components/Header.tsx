@@ -18,7 +18,7 @@ export function Header() {
         className="flex items-center gap-2 font-semibold"
       >
         <Logo className="h-6 w-6 text-primary" />
-        <span className="hidden sm:inline">LearnVerse AI</span>
+        <span className="hidden sm:inline">LearNova</span>
       </Link>
       <nav className="flex-1 text-center">
         <div className="hidden md:flex justify-center items-center gap-6 text-sm font-medium">

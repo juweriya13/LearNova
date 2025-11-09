@@ -103,7 +103,7 @@ export default function BrainGame() {
         return () => clearTimeout(timeout);
       }
     }
-  }, [flippedCards, cards]);
+  }, [flippedCards, cards, gameState]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;

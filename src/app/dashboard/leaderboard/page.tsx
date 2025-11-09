@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Trophy } from 'lucide-react';
 import { useMemo } from 'react';
+import { cn } from '@/lib/utils';
 
 import { collectionGroup, limit, orderBy, query, type Query, type DocumentData } from 'firebase/firestore';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -19,6 +20,13 @@ interface LeaderboardEntry {
 
 const getRankColor = (rank: number) =>
   rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-gray-400' : rank === 3 ? 'text-orange-400' : 'text-foreground';
+
+const getRankRowClass = (rank: number) => {
+    if (rank === 1) return 'bg-yellow-400/10 hover:bg-yellow-400/20';
+    if (rank === 2) return 'bg-gray-400/10 hover:bg-gray-400/20';
+    if (rank === 3) return 'bg-orange-400/10 hover:bg-orange-400/20';
+    return '';
+}
 
 export default function LeaderboardPage() {
   const firestore = useFirestore();
@@ -65,17 +73,17 @@ export default function LeaderboardPage() {
             {leaderboardData?.map((player, i) => {
               const rank = i + 1;
               return (
-                <TableRow key={player.id}>
+                <TableRow key={player.id} className={cn(getRankRowClass(rank))}>
                   <TableCell className="font-bold text-lg">
                     <div className="flex items-center gap-2">
-                      <Trophy className={`h-5 w-5 ${getRankColor(rank)}`} />
+                      <Trophy className={cn('h-5 w-5', getRankColor(rank), rank <= 3 && 'h-6 w-6')} />
                       {rank}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar>
-                        <AvatarImage src={`https://picsum.photos/seed/${player.id}/40/40`} alt={player.name || 'User'} />
+                        <AvatarImage src={`https://picsum.photos/seed/${player.id}/40/40`} alt={player.name || 'User'} data-ai-hint="person avatar" />
                         <AvatarFallback>{player.name?.charAt(0) || 'U'}</AvatarFallback>
                       </Avatar>
                       <span className="font-medium">{player.name || 'Anonymous Player'}</span>

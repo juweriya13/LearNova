@@ -17,10 +17,10 @@ import {
 export const navLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/profile', label: 'Profile', icon: User },
-  { href: '/quiz', label: 'Start Quiz', icon: HelpCircle },
-  { href: '/tutor', label: 'AI Tutor', icon: MessageSquare },
-  { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
-  { href: '/recommendations', label: 'Recommendations', icon: Lightbulb },
+  { href: '/dashboard/quiz', label: 'Start Quiz', icon: HelpCircle },
+  { href: '/dashboard/tutor', label: 'AI Tutor', icon: MessageSquare },
+  { href: '/dashboard/leaderboard', label: 'Leaderboard', icon: Trophy },
+  { href: '/dashboard/recommendations', label: 'Recommendations', icon: Lightbulb },
 ];
 
 export const dashboardStats = [

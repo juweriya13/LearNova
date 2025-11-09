@@ -6,5 +6,9 @@ export const metadata = {
 };
 
 export default function TutorPage() {
-  return <TutorClient />;
+  return (
+    <div className="flex justify-center items-center h-full">
+      <TutorClient />
+    </div>
+  );
 }

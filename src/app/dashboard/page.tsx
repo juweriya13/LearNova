@@ -31,6 +31,9 @@ export default function DashboardPage() {
 
   const userProgressRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}/progress`, user.uid) : null, [user, firestore]);
   const { data: userProgress } = useDoc(userProgressRef);
+  
+  const quizAttemptsRef = useMemoFirebase(() => user ? collection(firestore, `users/${user.uid}/quizAttempts`) : null, [user, firestore]);
+  const { data: quizAttempts } = useCollection(quizAttemptsRef);
 
   const userBadgesRef = useMemoFirebase(() => user ? collection(firestore, `users/${user.uid}/badges`) : null, [user, firestore]);
   const { data: userBadges } = useCollection(userBadgesRef);
@@ -46,7 +49,7 @@ export default function DashboardPage() {
   const stats = [
       { title: 'Qualification', value: userProfile?.qualificationId || 'N/A', icon: BookUser, color: dashboardStats[0].color },
       { title: 'Points Earned', value: userProgress?.totalScore ? Math.round(userProgress.totalScore) : 0, icon: Award, color: dashboardStats[1].color },
-      { title: 'Quizzes Taken', value: userProgress?.totalQuizzes || 0, icon: HelpCircle, color: dashboardStats[2].color, href: '/dashboard/history' },
+      { title: 'Quizzes Taken', value: quizAttempts?.length || 0, icon: HelpCircle, color: dashboardStats[2].color, href: '/dashboard/history' },
       { title: 'Average Score', value: `${userProgress?.averageScore ? Math.round(userProgress.averageScore) : 0}%`, icon: Target, color: dashboardStats[3].color },
   ];
 

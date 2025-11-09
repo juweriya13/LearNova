@@ -17,15 +17,10 @@ import {
 import { dashboardStats, badges } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { useUser, useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where } from 'firebase/firestore';
-import { BookUser, BrainCircuit, BookOpen } from 'lucide-react';
+import { doc, collection } from 'firebase/firestore';
+import { BookUser, Award, HelpCircle, Target } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
-
-const iconMap: { [key: string]: LucideIcon } = {
-  BrainCircuit,
-  BookOpen,
-};
 
 export default function DashboardPage() {
   const { user } = useUser();
@@ -50,9 +45,9 @@ export default function DashboardPage() {
 
   const stats = [
       { title: 'Qualification', value: userProfile?.qualificationId || 'N/A', icon: BookUser, color: dashboardStats[0].color },
-      { title: 'Points Earned', value: userProgress?.totalScore ? Math.round(userProgress.totalScore) : 0, icon: dashboardStats[1].icon, color: dashboardStats[1].color },
-      { title: 'Quizzes Taken', value: userProgress?.totalQuizzes || 0, icon: dashboardStats[2].icon, color: dashboardStats[2].color, href: '/dashboard/history' },
-      { title: 'Average Score', value: `${userProgress?.averageScore ? Math.round(userProgress.averageScore) : 0}%`, icon: dashboardStats[3].icon, color: dashboardStats[3].color },
+      { title: 'Points Earned', value: userProgress?.totalScore ? Math.round(userProgress.totalScore) : 0, icon: Award, color: dashboardStats[1].color },
+      { title: 'Quizzes Taken', value: userProgress?.totalQuizzes || 0, icon: HelpCircle, color: dashboardStats[2].color, href: '/dashboard/history' },
+      { title: 'Average Score', value: `${userProgress?.averageScore ? Math.round(userProgress.averageScore) : 0}%`, icon: Target, color: dashboardStats[3].color },
   ];
 
   return (

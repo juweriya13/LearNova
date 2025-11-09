@@ -14,6 +14,7 @@ import {
   User,
   History,
   Brain,
+  BookUser,
 } from 'lucide-react';
 
 export const navLinks = [
@@ -28,10 +29,10 @@ export const navLinks = [
 ];
 
 export const dashboardStats = [
-  { title: 'Daily Streak', value: '0 Days', icon: Flame, color: 'text-amber-500' },
+  { title: 'Qualification', value: 'N/A', icon: BookUser, color: 'text-amber-500' },
   { title: 'Points Earned', value: '0', icon: Award, color: 'text-violet-500' },
   { title: 'Quizzes Taken', value: '0', icon: HelpCircle, color: 'text-sky-500' },
-  { title: 'Highest Score', value: '0%', icon: Target, color: 'text-emerald-500' },
+  { title: 'Average Score', value: '0%', icon: Target, color: 'text-emerald-500' },
 ];
 
 export const subjects = [

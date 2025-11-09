@@ -11,7 +11,8 @@ import {
   Target,
   type LucideIcon,
   LogIn,
-  User
+  User,
+  History
 } from 'lucide-react';
 
 export const navLinks = [
@@ -21,6 +22,7 @@ export const navLinks = [
   { href: '/dashboard/tutor', label: 'AI Tutor', icon: MessageSquare },
   { href: '/dashboard/leaderboard', label: 'Leaderboard', icon: Trophy },
   { href: '/dashboard/recommendations', label: 'Recommendations', icon: Lightbulb },
+  { href: '/dashboard/history', label: 'Quiz History', icon: History },
 ];
 
 export const dashboardStats = [

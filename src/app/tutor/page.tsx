@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function TutorPage() {
   return (
-    <div className="flex justify-center items-center">
+    <div className="h-full flex items-center justify-center">
       <TutorClient />
     </div>
   );

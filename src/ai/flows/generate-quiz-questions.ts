@@ -21,9 +21,9 @@ const GenerateQuizQuestionsInputSchema = z.object({
   numberOfQuestions: z
     .number()
     .min(1)
-    .max(10)
-    .default(5) // Setting a default number of questions.
-    .describe('The number of quiz questions to generate (between 1 and 10).'),
+    .max(20)
+    .default(10) // Setting a default number of questions.
+    .describe('The number of quiz questions to generate (between 1 and 20).'),
 });
 export type GenerateQuizQuestionsInput = z.infer<typeof GenerateQuizQuestionsInputSchema>;
 

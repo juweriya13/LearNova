@@ -62,7 +62,7 @@ export default function QuizClient() {
         const result = await generateQuizQuestions({
           topic,
           educationLevel,
-          numberOfQuestions: 5,
+          numberOfQuestions: 10,
         });
         setQuestions(result.questions);
         setAnsweredQuestions(result.questions.map(q => ({...q, userAnswer: null})));

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -11,18 +11,22 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase, useAuth } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
+import { updateProfile } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { Home, Pencil } from 'lucide-react';
+import { Home, Pencil, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { qualificationLevels } from '@/lib/data';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function ProfilePage() {
   const { user } = useUser();
+  const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const userProfileRef = useMemoFirebase(
     () => (user ? doc(firestore, `users/${user.uid}`) : null),
@@ -32,21 +36,29 @@ export default function ProfilePage() {
 
   const [name, setName] = useState('');
   const [qualification, setQualification] = useState('');
+  const [photoURL, setPhotoURL] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
+    if (user) {
+        setPhotoURL(user.photoURL || '');
+    }
     if (userProfile) {
       setName(userProfile.name || '');
       setQualification(userProfile.qualificationId || '');
     }
-  }, [userProfile]);
+  }, [user, userProfile]);
 
   const handleUpdateProfile = async () => {
-    if (!user || !firestore || (!name && !qualification)) return;
+    if (!user || !auth || !firestore) return;
     setIsSaving(true);
     const userDocRef = doc(firestore, 'users', user.uid);
     try {
+        await updateProfile(user, {
+            displayName: name,
+            photoURL: photoURL
+        });
         await updateDoc(userDocRef, { 
             name: name,
             qualificationId: qualification 
@@ -67,11 +79,23 @@ export default function ProfilePage() {
         setIsSaving(false);
     }
   };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // In a real app, you would upload the file to a service like Firebase Storage
+    // and get a URL. For this prototype, we'll simulate it with a placeholder.
+    if (event.target.files && event.target.files[0]) {
+        const seed = Math.random().toString(36).substring(7);
+        setPhotoURL(`https://picsum.photos/seed/${seed}/200/200`);
+    }
+  };
   
   const handleCancel = () => {
     if(userProfile){
         setName(userProfile.name || '');
         setQualification(userProfile.qualificationId || '');
+    }
+    if (user) {
+        setPhotoURL(user.photoURL || '');
     }
     setIsEditing(false);
   }
@@ -97,6 +121,32 @@ export default function ProfilePage() {
             <p className="text-destructive">Error loading profile.</p>
         ): (
             <>
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="relative">
+                    <Avatar className="h-24 w-24">
+                        <AvatarImage src={photoURL} alt={name} data-ai-hint="person portrait" />
+                        <AvatarFallback>{name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    {isEditing && (
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="absolute bottom-0 right-0 rounded-full"
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            <Upload className="h-4 w-4" />
+                        </Button>
+                    )}
+                     <Input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        className="hidden"
+                        accept="image/*"
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                     <Label htmlFor="name">Name</Label>
                     <Input

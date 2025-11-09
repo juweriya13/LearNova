@@ -5,12 +5,13 @@ import { provideAITutorAssistance } from '@/ai/flows/ai-tutor-assistance';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Bot, Send, User } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Bot, Send, User, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -18,7 +19,12 @@ interface Message {
 }
 
 export default function TutorClient() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+        role: 'assistant',
+        content: "Hello! I'm your AI Tutor. Ask me anything about your studies, and I'll do my best to help you learn."
+    }
+  ]);
   const [input, setInput] = useState('');
   const [isPending, startTransition] = useTransition();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -27,7 +33,7 @@ export default function TutorClient() {
   const firestore = useFirestore();
 
   const userProfileRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}`) : null, [user, firestore]);
-  const { data: userProfile } = useDoc(userProfileRef);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -65,55 +71,70 @@ export default function TutorClient() {
     });
   };
 
+  if (isProfileLoading) {
+    return <div className="flex items-center justify-center h-full"><p>Loading Tutor...</p></div>
+  }
+
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)] max-w-3xl mx-auto bg-card rounded-xl shadow-lg">
-      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-        <div className="space-y-6">
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className={cn(
-                'flex items-start gap-3',
-                message.role === 'user' ? 'justify-end' : 'justify-start'
-              )}
-            >
-              {message.role === 'assistant' && (
-                <Avatar className="h-9 w-9 border">
-                  <AvatarFallback><Bot /></AvatarFallback>
-                </Avatar>
-              )}
-              <div
+    <Card className="w-full max-w-3xl mx-auto h-[calc(100vh-120px)] flex flex-col shadow-lg">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+            <Sparkles className="text-primary"/>
+            AI Tutor
+        </CardTitle>
+        <CardDescription>
+            Get instant help with your studies. Your tutor is tailored for: <span className="font-semibold">{userProfile?.qualificationId || 'your level'}.</span>
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex-1 overflow-hidden">
+        <ScrollArea className="h-full" ref={scrollAreaRef}>
+            <div className="space-y-6 pr-4">
+            {messages.map((message, index) => (
+                <div
+                key={index}
                 className={cn(
-                  'max-w-md rounded-lg p-3 text-sm whitespace-pre-wrap',
-                  message.role === 'user'
-                    ? 'bg-primary/80 text-primary-foreground'
-                    : 'bg-muted'
+                    'flex items-start gap-3',
+                    message.role === 'user' ? 'justify-end' : 'justify-start'
                 )}
-              >
-                {message.content}
-              </div>
-              {message.role === 'user' && (
-                 <Avatar className="h-9 w-9 border">
-                   <AvatarFallback><User /></AvatarFallback>
-                </Avatar>
-              )}
-            </div>
-          ))}
-          {isPending && (
-             <div className="flex items-start gap-3 justify-start">
-               <Avatar className="h-9 w-9 border">
-                  <AvatarFallback><Bot /></AvatarFallback>
-                </Avatar>
-                <div className="max-w-md rounded-lg p-3 bg-muted space-y-2">
-                    <Skeleton className="h-4 w-48" />
-                    <Skeleton className="h-4 w-32" />
+                >
+                {message.role === 'assistant' && (
+                    <Avatar className="h-9 w-9 border">
+                    <AvatarFallback><Bot /></AvatarFallback>
+                    </Avatar>
+                )}
+                <div
+                    className={cn(
+                    'max-w-md rounded-lg p-3 text-sm whitespace-pre-wrap',
+                    message.role === 'user'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted'
+                    )}
+                >
+                    {message.content}
                 </div>
+                {message.role === 'user' && (
+                    <Avatar className="h-9 w-9 border">
+                    <AvatarFallback><User /></AvatarFallback>
+                    </Avatar>
+                )}
+                </div>
+            ))}
+            {isPending && (
+                <div className="flex items-start gap-3 justify-start">
+                <Avatar className="h-9 w-9 border">
+                    <AvatarFallback><Bot /></AvatarFallback>
+                    </Avatar>
+                    <div className="max-w-md rounded-lg p-3 bg-muted space-y-2 w-full">
+                        <Skeleton className="h-4 w-48" />
+                        <Skeleton className="h-4 w-32" />
+                    </div>
+                </div>
+            )}
             </div>
-          )}
-        </div>
-      </ScrollArea>
-      <div className="p-4 border-t">
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        </ScrollArea>
+      </CardContent>
+      <CardFooter className="border-t pt-6">
+        <form onSubmit={handleSubmit} className="flex w-full gap-2">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -125,7 +146,7 @@ export default function TutorClient() {
             <Send className="h-4 w-4" />
           </Button>
         </form>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 }

@@ -59,21 +59,25 @@ export default function DashboardPage() {
   const welcomeName = userProfile?.name?.split(' ')[0] || 'Learner';
 
   const weeklyProgressData = useMemoFirebase(() => {
-    if (!subjects || !quizAttempts) return [];
-    
-    return subjects.map(subject => {
-        const attemptsForSubject = quizAttempts.filter(attempt => attempt.topic.toLowerCase() === subject.name.toLowerCase());
-        if (attemptsForSubject.length === 0) {
-            return { name: subject.name, averageScore: 0 };
-        }
-        const totalScore = attemptsForSubject.reduce((acc, attempt) => acc + attempt.percentage, 0);
-        return {
-            name: subject.name,
-            averageScore: Math.round(totalScore / attemptsForSubject.length),
-        };
-    }).filter(item => item.averageScore > 0);
+    if (!quizAttempts || quizAttempts.length === 0) return [];
 
-  }, [subjects, quizAttempts]);
+    const progressByTopic: { [topic: string]: { totalScore: number, count: number } } = {};
+
+    quizAttempts.forEach(attempt => {
+      const topic = attempt.topic;
+      if (!progressByTopic[topic]) {
+        progressByTopic[topic] = { totalScore: 0, count: 0 };
+      }
+      progressByTopic[topic].totalScore += attempt.percentage;
+      progressByTopic[topic].count += 1;
+    });
+
+    return Object.entries(progressByTopic).map(([topic, data]) => ({
+      name: topic,
+      averageScore: Math.round(data.totalScore / data.count),
+    }));
+
+  }, [quizAttempts]);
   
   const chartConfig = {
       averageScore: {
@@ -201,5 +205,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

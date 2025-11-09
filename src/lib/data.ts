@@ -12,12 +12,14 @@ import {
   type LucideIcon,
   LogIn,
   User,
-  History
+  History,
+  Brain,
 } from 'lucide-react';
 
 export const navLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/profile', label: 'Profile', icon: User },
+  { href: '/dashboard/braingame', label: 'Brain Game', icon: Brain },
   { href: '/dashboard/quiz', label: 'Start Quiz', icon: HelpCircle },
   { href: '/dashboard/tutor', label: 'AI Tutor', icon: MessageSquare },
   { href: '/dashboard/leaderboard', label: 'Leaderboard', icon: Trophy },
@@ -68,4 +70,8 @@ export const qualificationLevels = [
 export const publicNavLinks = [
   { href: '/login', label: 'Login', icon: LogIn },
   { href: '/signup', label: 'Sign Up', icon: LogIn },
+];
+
+export const gameIcons = [
+  'Cat', 'Dog', 'Rabbit', 'Bear', 'Fox', 'Panda', 'Koala', 'Lion'
 ];

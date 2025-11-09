@@ -28,8 +28,8 @@ export function Header() {
             href={link.href}
             className={cn(
               'transition-colors hover:text-foreground',
-              (pathname === link.href || (link.href.includes(pathname) && pathname !== '/dashboard'))
-                ? 'text-foreground'
+              (pathname === link.href || (link.href.includes(pathname) && pathname !== '/dashboard' && !link.href.includes('braingame') && !link.href.includes('quiz')))
+                ? 'text-foreground font-semibold'
                 : 'text-muted-foreground'
             )}
           >

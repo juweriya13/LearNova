@@ -6,10 +6,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Trophy } from 'lucide-react';
-import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
-
-import { collectionGroup, limit, orderBy, query, type Query, type DocumentData } from 'firebase/firestore';
+import { collection, limit, orderBy, query, type Query } from 'firebase/firestore';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 
 interface LeaderboardEntry {
@@ -34,21 +32,21 @@ export default function LeaderboardPage() {
   const leaderboardQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(
-        collectionGroup(firestore, 'leaderboard'),
+        collection(firestore, 'leaderboard/brainGame/players'),
         orderBy('totalScore', 'desc'),
         limit(10)
-      ) as unknown as Query<LeaderboardEntry>;
+      ) as Query<LeaderboardEntry>;
   }, [firestore]);
 
 
   const { data: leaderboardData, isLoading, error } =
-    useCollection<LeaderboardEntry>(leaderboardQuery as unknown as Query<DocumentData>);
+    useCollection<LeaderboardEntry>(leaderboardQuery);
 
   return (
     <Card className="shadow-lg">
       <CardHeader>
-        <CardTitle>Global Leaderboard</CardTitle>
-        <CardDescription>See who is at the top of their game.</CardDescription>
+        <CardTitle>Brain Game Leaderboard</CardTitle>
+        <CardDescription>See who has the sharpest mind.</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>

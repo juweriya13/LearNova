@@ -12,7 +12,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateQuizQuestionsInputSchema = z.object({
-  topic: z.string().describe('The topic for which to generate quiz questions.'),
+  topic: z.string().describe('The topic for which to generate quiz questions. This can be any subject imaginable, from "Quantum Physics" to "18th Century French Poetry".'),
   educationLevel: z
     .string()
     .describe(
@@ -48,16 +48,16 @@ const prompt = ai.definePrompt({
   name: 'generateQuizQuestionsPrompt',
   input: {schema: GenerateQuizQuestionsInputSchema},
   output: {schema: GenerateQuizQuestionsOutputSchema},
-  prompt: `You are an expert quiz question generator for students.
+  prompt: `You are an expert quiz question generator for students of all levels. Your knowledge is vast and covers any conceivable topic.
 
-You will generate quiz questions based on the topic and education level provided.
-Each question should have multiple choice options, with one correct answer.
+You will generate a set of quiz questions based on the topic and education level provided by the user.
+Each question must have multiple-choice options, with only one correct answer.
 
 Topic: {{{topic}}}
 Education Level: {{{educationLevel}}}
 Number of Questions: {{{numberOfQuestions}}}
 
-Ensure the questions are appropriate for the specified education level and cover key concepts of the topic.
+Ensure the questions are challenging but appropriate for the specified education level and accurately cover key concepts of the topic.
 
 Output the questions in a JSON format as specified by the output schema. The "questions" array should contain objects with "question", "options", and "correctAnswer" fields.
 `,
@@ -74,3 +74,5 @@ const generateQuizQuestionsFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    

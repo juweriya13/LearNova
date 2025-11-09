@@ -13,15 +13,20 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle, XCircle, ArrowRight, RotateCw } from 'lucide-react';
 import { Progress } from './ui/progress';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, collection, writeBatch, serverTimestamp, runTransaction, getDoc } from 'firebase/firestore';
+import { doc, collection, writeBatch, serverTimestamp, runTransaction, getDoc, addDoc } from 'firebase/firestore';
 
 type QuizState = 'setup' | 'loading' | 'active' | 'result';
 type Question = GenerateQuizQuestionsOutput['questions'][0];
+
+interface AnsweredQuestion extends Question {
+    userAnswer: string | null;
+}
 
 export default function QuizClient() {
   const [quizState, setQuizState] = useState<QuizState>('setup');
   const [topic, setTopic] = useState('Basic Algebra');
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [answeredQuestions, setAnsweredQuestions] = useState<AnsweredQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
@@ -60,6 +65,7 @@ export default function QuizClient() {
           numberOfQuestions: 5,
         });
         setQuestions(result.questions);
+        setAnsweredQuestions(result.questions.map(q => ({...q, userAnswer: null})));
         setQuizState('active');
       } catch (error) {
         console.error('Failed to generate quiz:', error);
@@ -69,9 +75,14 @@ export default function QuizClient() {
   };
 
   const handleAnswerSubmit = () => {
+    if (!selectedAnswer) return;
+
     if (selectedAnswer === questions[currentQuestionIndex].correctAnswer) {
       setScore(score + 1);
     }
+    const updatedAnsweredQuestions = [...answeredQuestions];
+    updatedAnsweredQuestions[currentQuestionIndex].userAnswer = selectedAnswer;
+    setAnsweredQuestions(updatedAnsweredQuestions);
     setIsAnswered(true);
   };
 
@@ -91,6 +102,17 @@ export default function QuizClient() {
 
     const finalScore = score + (selectedAnswer === questions[currentQuestionIndex].correctAnswer ? 1 : 0);
     const percentage = (finalScore / questions.length) * 100;
+    
+    // Save the full quiz attempt
+    const quizAttemptRef = collection(firestore, `users/${user.uid}/quizAttempts`);
+    await addDoc(quizAttemptRef, {
+        userId: user.uid,
+        topic: topic,
+        questions: answeredQuestions,
+        score: finalScore,
+        percentage: percentage,
+        timestamp: serverTimestamp()
+    });
 
     const progressRef = doc(firestore, `users/${user.uid}/progress`, user.uid);
     const subjectProgressRef = doc(firestore, `users/${user.uid}/subjectsProgress`, topic.toLowerCase().replace(/\s/g, '-'));
@@ -144,6 +166,7 @@ export default function QuizClient() {
   const restartQuiz = () => {
     setQuizState('setup');
     setQuestions([]);
+    setAnsweredQuestions([]);
     setCurrentQuestionIndex(0);
     setSelectedAnswer(null);
     setIsAnswered(false);
@@ -179,8 +202,8 @@ export default function QuizClient() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="topic">Topic</Label>
-            <Input id="topic" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g., Photosynthesis" />
+            <Label htmlFor="topic">What do you want to be quizzed on?</Label>
+            <Input id="topic" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g., Photosynthesis, World War II, Calculus" />
           </div>
           <div>
             <Label htmlFor="educationLevel">Education Level</Label>
@@ -198,7 +221,7 @@ export default function QuizClient() {
   }
   
   if (quizState === 'result') {
-    const finalScore = score + (selectedAnswer === questions[currentQuestionIndex].correctAnswer ? 1 : 0);
+    const finalScore = score;
     const percentage = Math.round((finalScore / questions.length) * 100);
     return (
        <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -281,3 +304,5 @@ export default function QuizClient() {
     </div>
   );
 }
+
+    
